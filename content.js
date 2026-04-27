@@ -22,6 +22,7 @@ const dragCleanupMap = new WeakMap();
 
 // ── Init ─────────────────────────────────────────────────────────────
 async function init() {
+  console.log('[EM Flights] Inicializando v1.1.0...');
   try {
     const st = await chrome.storage.sync.get({ passengers:1, margin:10, bok:0.8, enabled:true, displayMode:'total' });
     config.margin      = Math.max(0,  Math.min(95, parseFloat(st.margin)      || 10));
@@ -29,6 +30,7 @@ async function init() {
     config.passengers  = Math.max(1,  Math.min(20, parseInt(st.passengers)    || 1));
     config.enabled     = typeof st.enabled === 'boolean' ? st.enabled : true;
     config.displayMode = ['total','pax'].includes(st.displayMode) ? st.displayMode : 'total';
+    console.log('[EM Flights] Configuración cargada:', config);
   } catch(e) {
     console.warn('[EM Flights] No se pudo cargar config:', e.message);
   }
@@ -105,11 +107,19 @@ function unbindPrices() {
 
 function onPriceClick(e) {
   if (!config.enabled) return;
+  
+  // Detener comportamiento del sitio para que no interfiera
+  e.preventDefault();
+  e.stopPropagation();
+
   const el = e.currentTarget;
-  if (!el || !el.isConnected) return;
+  console.log('[EM Flights] Clic en precio detectado:', el.textContent);
 
   const net = parsePrice(el.textContent);
-  if (isNaN(net) || net <= 0) return;
+  if (isNaN(net) || net <= 0) {
+    console.warn('[EM Flights] No se pudo parsear el precio:', el.textContent);
+    return;
+  }
 
   if (popup && popup.isConnected) {
     currentNet = net;
