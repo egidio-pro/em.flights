@@ -157,11 +157,17 @@ function createPopup(net) {
         </div>
         <span class="voe-brand-name">EM Flights</span>
       </div>
-      <button class="voe-close" aria-label="Cerrar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <label class="voe-switch" title="Activar/Desactivar calculadora">
+          <input type="checkbox" id="voeGlobalToggle" ${config.enabled ? 'checked' : ''}>
+          <span class="voe-slider"></span>
+        </label>
+        <button class="voe-close" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
     </div>
     <div class="voe-body"></div>
     <div class="voe-resize-handle">
@@ -175,6 +181,17 @@ function createPopup(net) {
   div.querySelector('.voe-close').addEventListener('click', (e) => {
     e.stopPropagation();
     destroyPopup();
+  });
+
+  div.querySelector('#voeGlobalToggle').addEventListener('change', async (e) => {
+    const next = e.target.checked;
+    config.enabled = next;
+    await chrome.storage.sync.set({ enabled: next });
+    if (!next) {
+      destroyPopup();
+      unbindPrices();
+      if (observer) { observer.disconnect(); observer = null; }
+    }
   });
 
   popup = div;

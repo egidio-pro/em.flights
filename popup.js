@@ -1,18 +1,17 @@
-const toggleBtn = document.getElementById('toggleBtn');
-const toggleLbl = document.getElementById('toggleLabel');
-const toggleDot = document.getElementById('toggleDot');
-const toast     = document.getElementById('toast');
+const toggleCheck = document.getElementById('enabledToggle');
+const toggleLbl   = document.getElementById('toggleLabel');
+const toast       = document.getElementById('toast');
 
 let toastTimer = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   const cfg = await chrome.storage.sync.get({ enabled: true });
+  toggleCheck.checked = cfg.enabled;
   setToggleUI(cfg.enabled);
 });
 
-toggleBtn.addEventListener('click', async () => {
-  const { enabled } = await chrome.storage.sync.get({ enabled: true });
-  const next = !enabled;
+toggleCheck.addEventListener('change', async () => {
+  const next = toggleCheck.checked;
   await chrome.storage.sync.set({ enabled: next });
   setToggleUI(next);
   showToast(next ? '✓ Calculadora Activada' : '⊘ Calculadora Desactivada', 'ok');
@@ -25,8 +24,6 @@ toggleBtn.addEventListener('click', async () => {
 
 function setToggleUI(enabled) {
   toggleLbl.textContent = enabled ? 'Calculadora activa' : 'Calculadora inactiva';
-  toggleDot.style.background = enabled ? '#34C759' : '#FF3B30';
-  toggleDot.style.boxShadow = enabled ? '0 0 8px rgba(52, 199, 89, 0.5)' : 'none';
 }
 
 function showToast(msg, type) {
