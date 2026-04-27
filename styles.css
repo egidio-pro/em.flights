@@ -1,527 +1,216 @@
 /* ================================================================
-   VOE BY EM – styles.css  v1.0.0
-   Diseño iOS minimal: fondo blanco puro, sin backdrop-filter,
-   máxima compatibilidad con cualquier sitio.
+   EM FLIGHTS – styles.css  v1.1.0
+   Design: Liquid Glass (Glassmorphism)
+   Author: Egidio
    ================================================================ */
+
+:root {
+  --voe-glass-bg: rgba(255, 255, 255, 0.72);
+  --voe-glass-border: rgba(255, 255, 255, 0.4);
+  --voe-glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
+  --voe-accent: #0071E3;
+  --voe-accent-vibrant: #0056b3;
+  --voe-success: #34C759;
+  --voe-error: #FF3B30;
+  --voe-text-primary: #1C1C1E;
+  --voe-text-secondary: #3C3C43CC;
+  --voe-blur: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --voe-glass-bg: rgba(28, 28, 30, 0.75);
+    --voe-glass-border: rgba(255, 255, 255, 0.12);
+    --voe-text-primary: #F2F2F7;
+    --voe-text-secondary: #AEAEB2;
+    --voe-accent: #5A9EF5;
+  }
+}
 
 /* ── Popup contenedor ───────────────────────────────────────────── */
 .voe-popup {
-  /* Posición y capa */
   position: fixed !important;
   z-index: 2147483647 !important;
-
-  /* Fondo puro blanco — sin blur para evitar bugs de z-stacking */
-  background: #ffffff !important;
-  border-radius: 16px !important;
-
-  /* Sombra iOS: suave, multicapa */
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.06),
-    0 4px 16px rgba(0, 0, 0, 0.12),
-    0 20px 40px rgba(0, 0, 0, 0.14) !important;
-
+  
+  background: var(--voe-glass-bg) !important;
+  backdrop-filter: blur(var(--voe-blur)) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(var(--voe-blur)) saturate(180%) !important;
+  
+  border: 1px solid var(--voe-glass-border) !important;
+  border-radius: 20px !important;
+  box-shadow: var(--voe-glass-shadow) !important;
+  
   width: 290px !important;
   padding: 0 !important;
   margin: 0 !important;
   overflow: hidden !important;
-
+  
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif !important;
-  font-size: 14px !important;
-  color: #1C1C1E !important;
-  line-height: 1.4 !important;
-  -webkit-font-smoothing: antialiased !important;
-
-  /* Reset forzado para no heredar estilos del sitio */
-  text-align: left !important;
-  letter-spacing: normal !important;
-  text-transform: none !important;
-  font-style: normal !important;
-  font-weight: 400 !important;
-
+  color: var(--voe-text-primary) !important;
+  
   transform: scale(var(--voe-scale, 1)) !important;
   transform-origin: top left !important;
-  animation: voeIn 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
-  user-select: none !important;
+  animation: voeIn 0.3s cubic-bezier(0.23, 1, 0.32, 1) forwards !important;
 }
 
-.voe-popup * {
-  box-sizing: border-box !important;
-  font-family: inherit !important;
-}
+.voe-popup * { box-sizing: border-box !important; }
 
 @keyframes voeIn {
-  from { opacity: 0; transform: translateY(6px) scale(calc(var(--voe-scale, 1) * 0.97)); }
+  from { opacity: 0; transform: translateY(12px) scale(calc(var(--voe-scale, 1) * 0.95)); }
   to   { opacity: 1; transform: translateY(0)   scale(var(--voe-scale, 1)); }
 }
 
 /* ── Header ─────────────────────────────────────────────────────── */
 .voe-header {
-  background: linear-gradient(135deg, #0040C8 0%, #0071E3 100%) !important;
-  padding: 12px 14px !important;
+  background: rgba(0, 113, 227, 0.08) !important;
+  padding: 14px 16px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   cursor: grab !important;
-  user-select: none !important;
+  border-bottom: 1px solid var(--voe-glass-border) !important;
 }
 
 .voe-header:active { cursor: grabbing !important; }
 
-.voe-brand {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-}
+.voe-brand { display: flex !important; align-items: center !important; gap: 10px !important; }
 
 .voe-brand-icon {
-  width: 24px !important;
-  height: 24px !important;
-  background: rgba(255,255,255,0.2) !important;
-  border: 1px solid rgba(255,255,255,0.3) !important;
-  border-radius: 7px !important;
+  width: 28px !important;
+  height: 28px !important;
+  background: var(--voe-accent) !important;
+  border-radius: 8px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  flex-shrink: 0 !important;
+  box-shadow: 0 4px 10px rgba(0, 113, 227, 0.3) !important;
 }
 
-.voe-brand-icon svg { width: 13px !important; height: 13px !important; }
+.voe-brand-icon svg { width: 14px !important; height: 14px !important; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2)); }
 
 .voe-brand-name {
-  font-size: 14px !important;
+  font-size: 15px !important;
   font-weight: 700 !important;
-  color: #ffffff !important;
-  letter-spacing: -0.2px !important;
+  letter-spacing: -0.3px !important;
 }
 
-.voe-header-right {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-}
-
-/* Indicador de drag */
-.voe-drag-dots {
-  font-size: 14px !important;
-  color: rgba(255,255,255,0.45) !important;
-  line-height: 1 !important;
-  letter-spacing: 1px !important;
-}
-
-/* Botón X */
 .voe-close {
-  width: 22px !important;
-  height: 22px !important;
-  border-radius: 6px !important;
-  background: rgba(255,255,255,0.15) !important;
-  border: 1px solid rgba(255,255,255,0.2) !important;
-  color: #ffffff !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50% !important;
+  background: rgba(0,0,0,0.05) !important;
+  border: none !important;
+  color: var(--voe-text-primary) !important;
   cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 0 !important;
-  transition: background 0.15s !important;
+  transition: all 0.2s !important;
 }
 
-.voe-close:hover {
-  background: rgba(255, 60, 60, 0.5) !important;
-  border-color: rgba(255,100,100,0.3) !important;
-}
+.voe-close:hover { background: var(--voe-error) !important; color: white !important; }
 
-.voe-close svg { width: 12px !important; height: 12px !important; }
+/* ── Cuerpo ─────────────────────────────────────────────────────── */
+.voe-body { padding: 16px !important; display: flex !important; flex-direction: column !important; gap: 12px !important; }
 
-/* ── Cuerpo del popup ───────────────────────────────────────────── */
-.voe-body {
-  padding: 12px 12px 10px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 8px !important;
-}
-
-/* ── Controlador de Tamaño ──────────────────────────────────────── */
-.voe-resize-handle {
-  position: absolute !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 24px !important;
-  height: 24px !important;
-  cursor: se-resize !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  color: rgba(0,0,0,0.2) !important;
-  transition: color 0.15s !important;
-}
-
-.voe-resize-handle:hover {
-  color: rgba(0,113,227,0.8) !important;
-}
-
-/* ── Chips de info base (precio + pasajeros) ────────────────────── */
-.voe-info-row {
-  display: flex !important;
-  gap: 6px !important;
-}
-
+/* ── Chips e Inputs ─────────────────────────────────────────────── */
 .voe-info-chip {
-  flex: 1 !important;
-  background: #F2F2F7 !important;
-  border-radius: 10px !important;
-  padding: 8px 10px !important;
+  background: rgba(255, 255, 255, 0.3) !important;
+  border: 1px solid var(--voe-glass-border) !important;
+  border-radius: 12px !important;
+  padding: 10px !important;
   text-align: center !important;
 }
 
-.voe-chip-label {
-  display: block !important;
-  font-size: 10px !important;
-  font-weight: 600 !important;      /* peso aumentado para mejor legibilidad */
-  color: #515154 !important;        /* contraste ~5.2:1 sobre #F2F2F7 — cumple WCAG AA */
-  margin-bottom: 2px !important;
-  line-height: 1.2 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.3px !important;
+.voe-chip-label { font-size: 10px !important; font-weight: 600 !important; color: var(--voe-text-secondary) !important; text-transform: uppercase; letter-spacing: 0.5px; }
+.voe-chip-value { font-size: 15px !important; font-weight: 700 !important; margin-top: 2px !important; }
+
+.voe-input {
+  width: 50px !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  border: 1px solid var(--voe-glass-border) !important;
+  border-radius: 8px !important;
+  padding: 4px 6px !important;
+  font-weight: 600 !important;
+  text-align: right !important;
+  color: var(--voe-text-primary) !important;
 }
 
-.voe-chip-value {
-  display: block !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  color: #1C1C1E !important;
-  font-variant-numeric: tabular-nums !important;
+/* ── Tarjetas (Glass Effect) ────────────────────────────────────── */
+.voe-card {
+  border-radius: 14px !important;
+  padding: 12px 14px !important;
+  border: 1px solid var(--voe-glass-border) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  transition: transform 0.2s !important;
 }
 
-/* ── Switcher ───────────────────────────────────────────────────── */
+.voe-card:hover { transform: translateY(-2px) !important; }
+
+.voe-card-blue {
+  background: rgba(0, 113, 227, 0.06) !important;
+  border-left: 4px solid var(--voe-accent) !important;
+}
+
+.voe-card-green {
+  background: rgba(52, 199, 89, 0.06) !important;
+  border-left: 4px solid var(--voe-success) !important;
+}
+
+.voe-card-title { font-size: 10px !important; font-weight: 600 !important; color: var(--voe-text-secondary) !important; margin-bottom: 4px !important; }
+
+/* Resaltado del Precio Final */
+.voe-card-main {
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.5px !important;
+  color: var(--voe-accent) !important;
+}
+
+.voe-card-green .voe-card-main { color: var(--voe-success) !important; }
+
+/* ── Switcher Líquido ───────────────────────────────────────────── */
 .voe-switcher {
   display: flex !important;
-  background: #E5E5EA !important;
-  border-radius: 8px !important;
-  padding: 2px !important;
+  background: rgba(0,0,0,0.06) !important;
+  border-radius: 10px !important;
+  padding: 3px !important;
 }
 
 .voe-switch-btn {
   flex: 1 !important;
-  text-align: center !important;
+  border-radius: 8px !important;
   font-size: 11px !important;
   font-weight: 600 !important;
-  padding: 6px 0 !important;
-  border-radius: 6px !important;
-  color: #8E8E93 !important;
+  padding: 8px !important;
   cursor: pointer !important;
-  transition: all 0.2s !important;
   border: none !important;
   background: transparent !important;
+  color: var(--voe-text-secondary) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .voe-switch-btn.active {
-  background: #ffffff !important;
-  color: #1C1C1E !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
+  background: white !important;
+  color: var(--voe-accent) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
 }
 
-/* ── Inputs ─────────────────────────────────────────────────────── */
-.voe-input {
-  width: 55px !important;
-  padding: 4px 6px !important;
-  border: 1px solid rgba(0,0,0,0.1) !important;
-  border-radius: 6px !important;
-  font-size: 12.5px !important;
-  font-weight: 600 !important;
-  text-align: right !important;
-  color: #1C1C1E !important;
-  background: #ffffff !important;
-  font-family: inherit !important;
-  -moz-appearance: textfield !important;
+/* ── Resize Handle ──────────────────────────────────────────────── */
+.voe-resize-handle {
+  position: absolute !important;
+  right: 4px !important;
+  bottom: 4px !important;
+  width: 16px !important;
+  height: 16px !important;
+  cursor: se-resize !important;
+  opacity: 0.3 !important;
 }
 
-.voe-input::-webkit-outer-spin-button,
-.voe-input::-webkit-inner-spin-button {
-  -webkit-appearance: none !important;
-}
-
-.voe-input:focus {
-  outline: none !important;
-  border-color: #0071E3 !important;
-  box-shadow: 0 0 0 2px rgba(0,113,227,0.2) !important;
-}
-
-.voe-input-err {
-  border-color: rgba(255,59,48,0.4) !important;
-}
-
-.voe-input-err:focus {
-  border-color: #FF3B30 !important;
-  box-shadow: 0 0 0 2px rgba(255,59,48,0.18) !important;
-}
-
-.voe-val-err {
-  color: #FF3B30 !important;
-  font-weight: 700 !important;
-}
-
-/* ── Grupo de input con botones +/- ────────────────────────────── */
-.voe-input-group {
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-}
-
-.voe-step-btn {
-  width: 22px !important;
-  height: 22px !important;
-  border-radius: 50% !important;
-  border: 1px solid rgba(0,0,0,0.1) !important;
-  background: #ffffff !important;
-  color: #0071E3 !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  transition: all 0.15s !important;
-  padding: 0 !important;
-  line-height: 1 !important;
-}
-
-.voe-step-btn:hover {
-  background: #0071E3 !important;
-  color: #ffffff !important;
-  border-color: #0071E3 !important;
-}
-
-.voe-step-btn:active {
-  transform: scale(0.9) !important;
-}
-
-
-/* ── Sección de porcentajes ─────────────────────────────────────── */
-.voe-section {
-  background: #F2F2F7 !important;
-  border-radius: 10px !important;
-  overflow: hidden !important;
-}
-
-.voe-row {
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-  padding: 7px 11px !important;
-  border-bottom: 1px solid rgba(0,0,0,0.05) !important;
-}
-
-.voe-row:last-child { border-bottom: none !important; }
-
-.voe-row-label {
-  font-size: 12.5px !important;
-  color: #3C3C43CC !important; /* iOS secondary label */
-  font-weight: 400 !important;
-}
-
-.voe-row-val {
-  font-size: 12.5px !important;
-  font-weight: 600 !important;
-  color: #1C1C1E !important;
-  font-variant-numeric: tabular-nums !important;
-}
-
-/* Fila de total: ligeramente destacada */
-.voe-row-total {
-  background: rgba(0,113,227,0.05) !important;
-}
-
-.voe-row-total .voe-row-label {
-  font-weight: 600 !important;
-  color: #1C1C1E !important;
-}
-
-.voe-row-total .voe-row-val {
-  color: #0071E3 !important;
-}
-
-/* ── Tarjetas de resultado ──────────────────────────────────────── */
-.voe-card {
-  border-radius: 10px !important;
-  padding: 10px 12px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 8px !important;
-}
-
-.voe-card-blue {
-  background: #EBF4FF !important;
-  border: 1px solid rgba(0,113,227,0.15) !important;
-}
-
-.voe-card-green {
-  background: #EAFAF0 !important;
-  border: 1px solid rgba(52,199,89,0.2) !important;
-}
-
-.voe-card-left { flex: 1 !important; min-width: 0 !important; }
-
-.voe-card-title {
-  font-size: 10px !important;
-  font-weight: 500 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.3px !important;
-  margin-bottom: 3px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-}
-
-.voe-card-badge {
-  background: rgba(0,0,0,0.06) !important;
-  padding: 2px 5px !important;
-  border-radius: 4px !important;
-  font-size: 8px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.5px !important;
-}
-
-.voe-card-blue .voe-card-title  { color: rgba(0,64,200,0.7) !important; }
-.voe-card-green .voe-card-title { color: rgba(30,130,60,0.7) !important; }
-
-.voe-card-main {
-  font-size: 18px !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.4px !important;
-  font-variant-numeric: tabular-nums !important;
-  line-height: 1.2 !important;
-}
-
-.voe-card-blue .voe-card-main  { color: #0040C8 !important; }
-.voe-card-green .voe-card-main { color: #1E7A3C !important; }
-
-.voe-card-sub {
-  font-size: 11px !important;
-  margin-top: 2px !important;
-  font-variant-numeric: tabular-nums !important;
-}
-
-.voe-card-blue .voe-card-sub  { color: rgba(0,64,200,0.55) !important; }
-.voe-card-green .voe-card-sub { color: rgba(30,122,60,0.55) !important; }
-
-.voe-card-icon {
-  flex-shrink: 0 !important;
-  width: 30px !important;
-  height: 30px !important;
-  border-radius: 8px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.voe-card-blue .voe-card-icon  { background: rgba(0,113,227,0.12) !important; color: #0071E3 !important; }
-.voe-card-green .voe-card-icon { background: rgba(52,199,89,0.15)  !important; color: #34C759 !important; }
-
-.voe-card-icon svg { width: 15px !important; height: 15px !important; }
-
-/* ── Hint inferior ──────────────────────────────────────────────── */
-.voe-hint {
-  text-align: center !important;
-  font-size: 10px !important;
-  color: #AEAEB2 !important;
-  padding: 2px 0 2px !important;
-}
-
-/* ── Estado de error (porcentaje inválido) ──────────────────────── */
-.voe-error-state {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  padding: 20px 16px !important;
-  gap: 8px !important;
-  text-align: center !important;
-}
-
-.voe-error-state svg {
-  width: 32px !important;
-  height: 32px !important;
-  color: #FF3B30 !important;
-  flex-shrink: 0 !important;
-}
-
-.voe-error-title {
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  color: #FF3B30 !important;
-}
-
-.voe-error-sub {
-  font-size: 11.5px !important;
-  color: #8E8E93 !important;
-  line-height: 1.5 !important;
-}
-
-/* ── Dark mode ──────────────────────────────────────────────────── */
+/* ── Dark Mode Tweaks ───────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
-  .voe-popup {
-    background: #1C1C1E !important;
-    color: #F2F2F7 !important;
-    box-shadow:
-      0 0 0 1px rgba(255,255,255,0.06),
-      0 4px 16px rgba(0,0,0,0.4),
-      0 20px 40px rgba(0,0,0,0.5) !important;
-  }
-
-  .voe-info-chip, .voe-section {
-    background: #2C2C2E !important;
-  }
-
-  .voe-chip-label { color: #AEAEB2 !important; } /* contraste ~4.6:1 sobre #1C1C1E — cumple WCAG AA */
-  .voe-chip-value { color: #F2F2F7 !important; }
-
-  .voe-row { border-bottom-color: rgba(255,255,255,0.06) !important; }
-  .voe-row-label { color: #8E8E93 !important; }
-  .voe-row-val   { color: #F2F2F7 !important; }
-  .voe-row-total { background: rgba(0,113,227,0.12) !important; }
-
-  .voe-switcher { background: rgba(255,255,255,0.06) !important; }
-  .voe-switch-btn { color: #8E8E93 !important; }
-  .voe-switch-btn.active { background: #3A3A3C !important; color: #F2F2F7 !important; }
-
-  .voe-input {
-    background: #1C1C1E !important;
-    border-color: rgba(255,255,255,0.1) !important;
-    color: #F2F2F7 !important;
-  }
-  .voe-input:focus {
-    border-color: #5A9EF5 !important;
-    box-shadow: 0 0 0 2px rgba(90,158,245,0.2) !important;
-  }
-  .voe-input-err { border-color: rgba(255,59,48,0.5) !important; }
-  .voe-val-err   { color: #FF6B6B !important; }
-
-  .voe-step-btn {
-    background: #2C2C2E !important;
-    border-color: rgba(255,255,255,0.1) !important;
-    color: #5A9EF5 !important;
-  }
-  .voe-step-btn:hover {
-    background: #5A9EF5 !important;
-    color: #ffffff !important;
-  }
-
-  .voe-card-blue  { background: rgba(0,64,200,0.18)  !important; border-color: rgba(0,113,227,0.25) !important; }
-  .voe-card-green { background: rgba(52,199,89,0.15) !important; border-color: rgba(52,199,89,0.28)  !important; }
-
-  .voe-card-blue .voe-card-main  { color: #5A9EF5 !important; }
-  .voe-card-green .voe-card-main { color: #4CD964 !important; }
-  .voe-card-blue .voe-card-sub   { color: rgba(90,158,245,0.7) !important; }
-  .voe-card-green .voe-card-sub  { color: rgba(76,217,100,0.6) !important; }
-  .voe-card-blue .voe-card-title  { color: rgba(90,158,245,0.8) !important; }
-  .voe-card-green .voe-card-title { color: rgba(76,217,100,0.7) !important; }
-  
-  .voe-card-badge { background: rgba(255,255,255,0.1) !important; color: rgba(255,255,255,0.7) !important; }
-
-  .voe-card-blue .voe-card-icon  { background: rgba(0,113,227,0.2) !important; color: #5A9EF5 !important; }
-  .voe-card-green .voe-card-icon { background: rgba(52,199,89,0.2) !important; color: #4CD964 !important; }
-
-  .voe-hint { color: #3A3A3C !important; }
-
-  .voe-resize-handle { color: rgba(255,255,255,0.2) !important; }
-  .voe-resize-handle:hover { color: rgba(90,158,245,0.8) !important; }
+  .voe-info-chip, .voe-input { background: rgba(0,0,0,0.2) !important; }
+  .voe-switch-btn.active { background: rgba(255,255,255,0.1) !important; }
 }

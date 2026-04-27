@@ -1,11 +1,5 @@
 /* ================================================================
-   EM FLIGHTS – content.js  v1.0.0
-   ================================================================
-   - Configuración de Margen y Bok directamente en la tarjeta.
-   - Switcher Total / Por Pasajero con aria-pressed.
-   - Redimensionable y arrastrable.
-   - Validación cruzada con estado de error editable.
-   - Seguridad: sender.id, storage sanitizado, debounce.
+   EM FLIGHTS – content.js  v1.1.0
    ================================================================ */
 
 'use strict';
@@ -21,8 +15,8 @@ let config     = { passengers: 1, margin: 10, bok: 0.8, enabled: true, displayMo
 let popup      = null;
 let observer   = null;
 let debTimer   = null;
-let saveTimer  = null;  // debounce para escrituras a storage
-let currentNet = null;  // precio activo (fuera del DOM para no exponerlo al host)
+let saveTimer  = null;
+let currentNet = null;
 
 const dragCleanupMap = new WeakMap();
 
@@ -30,14 +24,13 @@ const dragCleanupMap = new WeakMap();
 async function init() {
   try {
     const st = await chrome.storage.sync.get({ passengers:1, margin:10, bok:0.8, enabled:true, displayMode:'total' });
-    // Sanitizar valores al cargar — defensa ante corrupción de storage
     config.margin      = Math.max(0,  Math.min(95, parseFloat(st.margin)      || 10));
     config.bok         = Math.max(0,  Math.min(95, parseFloat(st.bok)         || 0.8));
     config.passengers  = Math.max(1,  Math.min(20, parseInt(st.passengers)    || 1));
     config.enabled     = typeof st.enabled === 'boolean' ? st.enabled : true;
     config.displayMode = ['total','pax'].includes(st.displayMode) ? st.displayMode : 'total';
   } catch(e) {
-    console.warn('[EM Flights] No se pudo cargar config:', e.message || 'Error desconocido');
+    console.warn('[EM Flights] No se pudo cargar config:', e.message);
   }
   if (config.enabled) {
     bindPrices();
@@ -46,12 +39,12 @@ async function init() {
 }
 
 chrome.runtime.onMessage.addListener((msg, sender) => {
-  if (sender.id !== chrome.runtime.id) return; // solo mensajes internos
+  if (sender.id !== chrome.runtime.id) return;
   if (msg.type === 'CONFIG_UPDATED') {
     if (msg.config.passengers !== undefined) config.passengers = msg.config.passengers;
     config.enabled = true;
     if (popup && popup.isConnected && currentNet > 0) {
-      renderPopupBody(); // Full re-render when passengers change
+      renderPopupBody();
     }
     bindPrices();
   } else if (msg.type === 'TOGGLE_STATE') {
@@ -117,7 +110,6 @@ function onPriceClick(e) {
 
   const net = parsePrice(el.textContent);
   if (isNaN(net) || net <= 0) return;
-  // No bloqueamos si calc() devuelve null — renderPopupBody muestra el estado de error
 
   if (popup && popup.isConnected) {
     currentNet = net;
@@ -138,12 +130,14 @@ function refreshPopupData(net) {
   const body = popup.querySelector('.voe-body');
   if (!body) return;
 
-  body.style.opacity = '0.5';
-  body.style.transition = 'opacity 0.1s';
+  body.style.opacity = '0.4';
+  body.style.filter = 'blur(4px)';
+  body.style.transition = 'all 0.15s';
   setTimeout(() => {
     renderPopupBody();
     body.style.opacity = '1';
-  }, 90);
+    body.style.filter = 'none';
+  }, 100);
 }
 
 function createPopup(net) {
@@ -157,21 +151,17 @@ function createPopup(net) {
       <div class="voe-brand">
         <div class="voe-brand-icon">
           <svg viewBox="0 0 24 24" fill="none">
-            <path d="M22 2L11 13" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" stroke-width="1.5"
-                  stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M22 2L11 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
         <span class="voe-brand-name">EM Flights</span>
       </div>
-      <div class="voe-header-right">
-        <div class="voe-drag-dots">⠿</div>
-        <button class="voe-close" aria-label="Cerrar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
+      <button class="voe-close" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
     </div>
     <div class="voe-body"></div>
     <div class="voe-resize-handle">
@@ -187,7 +177,6 @@ function createPopup(net) {
     destroyPopup();
   });
 
-  // Render content — currentNet debe estar asignado antes de llamar a renderPopupBody
   popup = div;
   currentNet = net;
   renderPopupBody();
@@ -200,65 +189,34 @@ function renderPopupBody() {
   const body = popup.querySelector('.voe-body');
   if (!body) return;
   const d = calc(currentNet);
+  
   if (!d) {
-    // Porcentajes inválidos — mostramos error + inputs para corrección en el lugar
     body.innerHTML = `
       <div class="voe-error-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
         <p class="voe-error-title">Porcentaje inválido</p>
-        <p class="voe-error-sub">La suma no puede alcanzar el 100%. Corríjalo aquí:</p>
+        <p class="voe-error-sub">La suma de margen + arancel no puede ser ≥ 100%.</p>
       </div>
-      <div class="voe-section">
-        <div class="voe-row">
-          <span class="voe-row-label">Pasajeros</span>
-          <div class="voe-input-group">
-            <button class="voe-step-btn" data-input="voePax" data-dir="-1">−</button>
-            <input type="number" id="voePax" class="voe-input voe-input-err" value="${config.passengers}" min="1" max="20">
-            <button class="voe-step-btn" data-input="voePax" data-dir="1">+</button>
-          </div>
-        </div>
-        <div class="voe-row">
-          <span class="voe-row-label">Margen operativo (%)</span>
-          <div class="voe-input-group">
-            <button class="voe-step-btn" data-input="voeMargin" data-dir="-1">−</button>
-            <input type="number" id="voeMargin" class="voe-input voe-input-err" value="${config.margin}" step="0.1" min="0" max="95">
-            <button class="voe-step-btn" data-input="voeMargin" data-dir="1">+</button>
-          </div>
-        </div>
-        <div class="voe-row">
-          <span class="voe-row-label">Bok/Arancel (%)</span>
-          <div class="voe-input-group">
-            <button class="voe-step-btn" data-input="voeBok" data-dir="-1">−</button>
-            <input type="number" id="voeBok" class="voe-input voe-input-err" value="${config.bok}" step="0.1" min="0" max="95">
-            <button class="voe-step-btn" data-input="voeBok" data-dir="1">+</button>
-          </div>
-        </div>
-        <div class="voe-row voe-row-total">
-          <span class="voe-row-label">Total incluido</span>
-          <span class="voe-row-val voe-val-err">${(config.margin + config.bok).toFixed(2)}%</span>
-        </div>
+      <div class="voe-info-chip">
+        <span class="voe-chip-label">Margen (%)</span>
+        <input type="number" id="voeMargin" class="voe-input" value="${config.margin}">
+      </div>
+      <div class="voe-info-chip">
+        <span class="voe-chip-label">Bok/Arancel (%)</span>
+        <input type="number" id="voeBok" class="voe-input" value="${config.bok}">
       </div>
     `;
     const mIn = body.querySelector('#voeMargin');
     const bIn = body.querySelector('#voeBok');
-    const pIn = body.querySelector('#voePax');
     if (mIn) mIn.addEventListener('input', onInputChange);
     if (bIn) bIn.addEventListener('input', onInputChange);
-    if (pIn) pIn.addEventListener('input', onInputChange);
     return;
   }
 
   const isTotal = config.displayMode === 'total';
-  const subtitle = isTotal ? 'Total' : 'Por persona';
+  const subtitle = isTotal ? 'Total' : 'Por pax';
   const mainFinal = isTotal ? d.final : d.finalPax;
   const mainProfit = isTotal ? d.profit : d.profitPax;
 
-  // Solo restaurar foco si el elemento activo es un input propio de la extensión
-  // (evita pasar IDs externos al querySelector, previniendo selector injection)
   const OWN_INPUT_IDS = ['voeMargin', 'voeBok', 'voePax'];
   const activeId = document.activeElement && OWN_INPUT_IDS.includes(document.activeElement.id)
     ? document.activeElement.id
@@ -267,85 +225,50 @@ function renderPopupBody() {
   body.innerHTML = `
     <div class="voe-info-row">
       <div class="voe-info-chip">
-        <span class="voe-chip-label">Precio del vuelo</span>
+        <span class="voe-chip-label">Neto GWC</span>
         <span class="voe-chip-value">USD ${money(d.net)}</span>
       </div>
+      <div class="voe-info-chip">
+        <span class="voe-chip-label">Pax</span>
+        <input type="number" id="voePax" class="voe-input" value="${config.passengers}" min="1" max="20">
+      </div>
     </div>
 
-    <!-- Switcher -->
     <div class="voe-switcher">
-      <button class="voe-switch-btn ${isTotal ? 'active' : ''}" data-mode="total" aria-pressed="${isTotal}">Total</button>
-      <button class="voe-switch-btn ${!isTotal ? 'active' : ''}" data-mode="pax" aria-pressed="${!isTotal}">Por Pasajero</button>
+      <button class="voe-switch-btn ${isTotal ? 'active' : ''}" data-mode="total">Total</button>
+      <button class="voe-switch-btn ${!isTotal ? 'active' : ''}" data-mode="pax">Por Pasajero</button>
     </div>
 
-    <div class="voe-section">
-      <div class="voe-row">
-        <span class="voe-row-label">Pasajeros</span>
-        <div class="voe-input-group">
-          <button class="voe-step-btn" data-input="voePax" data-dir="-1">−</button>
-          <input type="number" id="voePax" class="voe-input" value="${config.passengers}" min="1" max="20">
-          <button class="voe-step-btn" data-input="voePax" data-dir="1">+</button>
-        </div>
+    <div class="voe-info-row">
+      <div class="voe-info-chip">
+        <span class="voe-chip-label">Margen (%)</span>
+        <input type="number" id="voeMargin" class="voe-input" value="${config.margin}" step="0.1">
       </div>
-      <div class="voe-row">
-        <span class="voe-row-label">Margen operativo (%)</span>
-        <div class="voe-input-group">
-          <button class="voe-step-btn" data-input="voeMargin" data-dir="-1">−</button>
-          <input type="number" id="voeMargin" class="voe-input" value="${config.margin}" step="0.1" min="0" max="95">
-          <button class="voe-step-btn" data-input="voeMargin" data-dir="1">+</button>
-        </div>
-      </div>
-      <div class="voe-row">
-        <span class="voe-row-label">Bok/Arancel (%)</span>
-        <div class="voe-input-group">
-          <button class="voe-step-btn" data-input="voeBok" data-dir="-1">−</button>
-          <input type="number" id="voeBok" class="voe-input" value="${config.bok}" step="0.1" min="0" max="95">
-          <button class="voe-step-btn" data-input="voeBok" data-dir="1">+</button>
-        </div>
-      </div>
-      <div class="voe-row voe-row-total">
-        <span class="voe-row-label">Total incluido</span>
-        <span class="voe-row-val" id="voePctVal">${d.pct.toFixed(2)}%</span>
+      <div class="voe-info-chip">
+        <span class="voe-chip-label">Bok (%)</span>
+        <input type="number" id="voeBok" class="voe-input" value="${config.bok}" step="0.1">
       </div>
     </div>
 
-    <!-- Tarjeta: precio a cobrar -->
     <div class="voe-card voe-card-blue">
-      <div class="voe-card-left">
+      <div>
         <div class="voe-card-title">Precio final al cliente <span class="voe-card-badge">${subtitle}</span></div>
         <div class="voe-card-main" id="voeFinalMain">USD ${money(mainFinal)}</div>
       </div>
-      <div class="voe-card-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-          <rect x="1" y="4" width="22" height="16" rx="2"/>
-          <line x1="1" y1="10" x2="23" y2="10"/>
-        </svg>
-      </div>
     </div>
 
-    <!-- Tarjeta: ganancia -->
     <div class="voe-card voe-card-green">
-      <div class="voe-card-left">
+      <div>
         <div class="voe-card-title">Ganancia neta <span class="voe-card-badge">${subtitle}</span></div>
         <div class="voe-card-main" id="voeProfitMain">USD ${money(mainProfit)}</div>
       </div>
-      <div class="voe-card-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-          <polyline points="17 6 23 6 23 12"/>
-        </svg>
-      </div>
     </div>
-
-    <div class="voe-hint">Seleccione otro precio para recalcular</div>
   `;
 
-  // Restore focus if any
   if (activeId && popup.querySelector('#' + activeId)) {
     popup.querySelector('#' + activeId).focus();
   }
 
-  // Attach listeners
   popup.querySelectorAll('.voe-switch-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       config.displayMode = e.target.dataset.mode;
@@ -360,20 +283,6 @@ function renderPopupBody() {
   if (mIn) mIn.addEventListener('input', onInputChange);
   if (bIn) bIn.addEventListener('input', onInputChange);
   if (pIn) pIn.addEventListener('input', onInputChange);
-
-  popup.querySelectorAll('.voe-step-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const inputId = e.target.dataset.input;
-      const dir = parseInt(e.target.dataset.dir);
-      const input = popup.querySelector('#' + inputId);
-      if (input) {
-        let val = (parseFloat(input.value) || 0) + dir;
-        input.value = val;
-        // Disparar evento input manualmente para que se ejecute onInputChange
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-    });
-  });
 }
 
 function onInputChange(e) {
@@ -390,20 +299,16 @@ function onInputChange(e) {
     config.passengers = val;
   }
 
-  // Debounce 400ms — evita superar la cuota de storage.sync (120 ops/min)
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    chrome.storage.sync.set({ margin: config.margin, bok: config.bok, passengers: config.passengers })
-      .catch(err => console.warn('[EM Flights] Error al guardar config:', err.message));
+    chrome.storage.sync.set({ margin: config.margin, bok: config.bok, passengers: config.passengers });
   }, 400);
 
-  // Validación cruzada: si la suma supera 100%, mostrar estado de error
   if (config.margin + config.bok >= 100) {
-    renderPopupBody(); // Triggereará el bloque de error dentro de renderPopupBody
+    renderPopupBody();
     return;
   }
 
-  // Actualización parcial (sin re-render completo) para conservar foco
   const d = calc(currentNet);
   if (!d) return;
 
@@ -411,11 +316,9 @@ function onInputChange(e) {
   const mainFinal = isTotal ? d.final : d.finalPax;
   const mainProfit = isTotal ? d.profit : d.profitPax;
 
-  const pctEl = popup.querySelector('#voePctVal');
   const finalEl = popup.querySelector('#voeFinalMain');
   const profitEl = popup.querySelector('#voeProfitMain');
 
-  if (pctEl) pctEl.textContent = d.pct.toFixed(2) + '%';
   if (finalEl) finalEl.textContent = 'USD ' + money(mainFinal);
   if (profitEl) profitEl.textContent = 'USD ' + money(mainProfit);
 }
