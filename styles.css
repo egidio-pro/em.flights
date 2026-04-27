@@ -5,25 +5,26 @@
    ================================================================ */
 
 :root {
-  --voe-glass-bg: rgba(255, 255, 255, 0.72);
-  --voe-glass-border: rgba(255, 255, 255, 0.4);
-  --voe-glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
-  --voe-accent: #0071E3;
-  --voe-accent-vibrant: #0056b3;
-  --voe-success: #34C759;
-  --voe-error: #FF3B30;
-  --voe-text-primary: #1C1C1E;
-  --voe-text-secondary: #3C3C43CC;
-  --voe-blur: 16px;
+  --voe-glass-bg: rgba(255, 255, 255, 0.88); /* Increased opacity */
+  --voe-glass-border: rgba(0, 0, 0, 0.08);
+  --voe-glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.15);
+  --voe-accent: #0056b3; /* Slightly darker blue for contrast */
+  --voe-accent-light: #0071E3;
+  --voe-success: #1E7A3C; /* Darker green */
+  --voe-error: #D70015; /* Darker red */
+  --voe-text-primary: #000000; /* Pure black for maximum contrast */
+  --voe-text-secondary: #48484A; /* Darker secondary text */
+  --voe-blur: 24px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --voe-glass-bg: rgba(28, 28, 30, 0.75);
-    --voe-glass-border: rgba(255, 255, 255, 0.12);
-    --voe-text-primary: #F2F2F7;
-    --voe-text-secondary: #AEAEB2;
+    --voe-glass-bg: rgba(28, 28, 30, 0.92);
+    --voe-glass-border: rgba(255, 255, 255, 0.15);
+    --voe-text-primary: #FFFFFF;
+    --voe-text-secondary: #C7C7CC;
     --voe-accent: #5A9EF5;
+    --voe-success: #34C759;
   }
 }
 
@@ -37,7 +38,7 @@
   -webkit-backdrop-filter: blur(var(--voe-blur)) saturate(180%) !important;
   
   border: 1px solid var(--voe-glass-border) !important;
-  border-radius: 20px !important;
+  border-radius: 28px !important;
   box-shadow: var(--voe-glass-shadow) !important;
   
   width: 290px !important;
@@ -115,26 +116,72 @@
 
 /* ── Chips e Inputs ─────────────────────────────────────────────── */
 .voe-info-chip {
-  background: rgba(255, 255, 255, 0.3) !important;
-  border: 1px solid var(--voe-glass-border) !important;
-  border-radius: 12px !important;
-  padding: 10px !important;
-  text-align: center !important;
-}
-
-.voe-chip-label { font-size: 10px !important; font-weight: 600 !important; color: var(--voe-text-secondary) !important; text-transform: uppercase; letter-spacing: 0.5px; }
-.voe-chip-value { font-size: 15px !important; font-weight: 700 !important; margin-top: 2px !important; }
-
-.voe-input {
-  width: 50px !important;
   background: rgba(255, 255, 255, 0.5) !important;
   border: 1px solid var(--voe-glass-border) !important;
-  border-radius: 8px !important;
-  padding: 4px 6px !important;
-  font-weight: 600 !important;
-  text-align: right !important;
-  color: var(--voe-text-primary) !important;
+  border-radius: 14px !important;
+  padding: 10px 12px !important;
+  text-align: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
 }
+
+.voe-chip-label { 
+  font-size: 11px !important; 
+  font-weight: 700 !important; 
+  color: var(--voe-text-secondary) !important; 
+  text-transform: uppercase; 
+  letter-spacing: 0.8px;
+}
+
+.voe-input-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.voe-step-btn {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  border: 1px solid var(--voe-glass-border) !important;
+  background: white !important;
+  color: var(--voe-accent-light) !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  transition: all 0.2s !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+}
+
+.voe-step-btn:hover {
+  background: var(--voe-accent-light) !important;
+  color: white !important;
+  transform: scale(1.1) !important;
+}
+
+.voe-step-btn:active {
+  transform: scale(0.9) !important;
+}
+
+.voe-input {
+  width: 44px !important;
+  background: transparent !important;
+  border: none !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  color: var(--voe-text-primary) !important;
+  padding: 0 !important;
+}
+
+.voe-input:focus { outline: none !important; }
 
 /* ── Tarjetas (Glass Effect) ────────────────────────────────────── */
 .voe-card {

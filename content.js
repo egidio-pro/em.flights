@@ -214,18 +214,23 @@ function renderPopupBody() {
         <p class="voe-error-sub">La suma de margen + arancel no puede ser ≥ 100%.</p>
       </div>
       <div class="voe-info-chip">
-        <span class="voe-chip-label">Margen (%)</span>
-        <input type="number" id="voeMargin" class="voe-input" value="${config.margin}">
+        <span class="voe-chip-label">Margen operativos (%)</span>
+        <div class="voe-input-group">
+          <button class="voe-step-btn" data-input="voeMargin" data-dir="-1">−</button>
+          <input type="number" id="voeMargin" class="voe-input" value="${config.margin}">
+          <button class="voe-step-btn" data-input="voeMargin" data-dir="1">+</button>
+        </div>
       </div>
       <div class="voe-info-chip">
         <span class="voe-chip-label">Bok/Arancel (%)</span>
-        <input type="number" id="voeBok" class="voe-input" value="${config.bok}">
+        <div class="voe-input-group">
+          <button class="voe-step-btn" data-input="voeBok" data-dir="-1">−</button>
+          <input type="number" id="voeBok" class="voe-input" value="${config.bok}">
+          <button class="voe-step-btn" data-input="voeBok" data-dir="1">+</button>
+        </div>
       </div>
     `;
-    const mIn = body.querySelector('#voeMargin');
-    const bIn = body.querySelector('#voeBok');
-    if (mIn) mIn.addEventListener('input', onInputChange);
-    if (bIn) bIn.addEventListener('input', onInputChange);
+    attachBodyListeners();
     return;
   }
 
@@ -243,11 +248,15 @@ function renderPopupBody() {
     <div class="voe-info-row">
       <div class="voe-info-chip">
         <span class="voe-chip-label">Neto GWC</span>
-        <span class="voe-chip-value">USD ${money(d.net)}</span>
+        <span class="voe-chip-value" style="font-size:17px; color:var(--voe-text-primary)">USD ${money(d.net)}</span>
       </div>
       <div class="voe-info-chip">
-        <span class="voe-chip-label">Pax</span>
-        <input type="number" id="voePax" class="voe-input" value="${config.passengers}" min="1" max="20">
+        <span class="voe-chip-label">Pasajeros</span>
+        <div class="voe-input-group">
+          <button class="voe-step-btn" data-input="voePax" data-dir="-1">−</button>
+          <input type="number" id="voePax" class="voe-input" value="${config.passengers}" min="1" max="20">
+          <button class="voe-step-btn" data-input="voePax" data-dir="1">+</button>
+        </div>
       </div>
     </div>
 
@@ -259,11 +268,19 @@ function renderPopupBody() {
     <div class="voe-info-row">
       <div class="voe-info-chip">
         <span class="voe-chip-label">Margen (%)</span>
-        <input type="number" id="voeMargin" class="voe-input" value="${config.margin}" step="0.1">
+        <div class="voe-input-group">
+          <button class="voe-step-btn" data-input="voeMargin" data-dir="-1">−</button>
+          <input type="number" id="voeMargin" class="voe-input" value="${config.margin}" step="0.1">
+          <button class="voe-step-btn" data-input="voeMargin" data-dir="1">+</button>
+        </div>
       </div>
       <div class="voe-info-chip">
         <span class="voe-chip-label">Bok (%)</span>
-        <input type="number" id="voeBok" class="voe-input" value="${config.bok}" step="0.1">
+        <div class="voe-input-group">
+          <button class="voe-step-btn" data-input="voeBok" data-dir="-1">−</button>
+          <input type="number" id="voeBok" class="voe-input" value="${config.bok}" step="0.1">
+          <button class="voe-step-btn" data-input="voeBok" data-dir="1">+</button>
+        </div>
       </div>
     </div>
 
@@ -286,6 +303,12 @@ function renderPopupBody() {
     popup.querySelector('#' + activeId).focus();
   }
 
+  attachBodyListeners();
+}
+
+function attachBodyListeners() {
+  if (!popup) return;
+  
   popup.querySelectorAll('.voe-switch-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       config.displayMode = e.target.dataset.mode;
@@ -300,6 +323,20 @@ function renderPopupBody() {
   if (mIn) mIn.addEventListener('input', onInputChange);
   if (bIn) bIn.addEventListener('input', onInputChange);
   if (pIn) pIn.addEventListener('input', onInputChange);
+
+  popup.querySelectorAll('.voe-step-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const inputId = e.target.dataset.input;
+      const dir = parseFloat(e.target.dataset.dir);
+      const input = popup.querySelector('#' + inputId);
+      if (input) {
+        let step = input.id === 'voePax' ? 1 : 0.5;
+        let val = (parseFloat(input.value) || 0) + (dir * step);
+        input.value = val;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+  });
 }
 
 function onInputChange(e) {
