@@ -109,7 +109,7 @@ function createPopup(net) {
   div.innerHTML = `
     <div class="voe-header">
       <div class="voe-brand">
-        <div class="voe-brand-icon">✈</div>
+        <img class="voe-brand-icon" src="${chrome.runtime.getURL('icons/icon48.png')}" alt="Logo">
         <span class="voe-brand-name">EM Flights</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
