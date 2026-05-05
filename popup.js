@@ -146,7 +146,7 @@ function renderFloatingCalculatorBody(popupElement) {
       </div>
 
       ${d ? `
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+      <div style="display: flex; flex-direction: column; gap: 12px;">
         <div class="calc-result-card calc-result-card primary">
           <div class="calc-result-label">Precio Final ${calcConfig.displayMode === 'total' ? '(Total)' : '(Por Pax)'}</div>
           <div class="calc-result-value" id="floatingCalcFinalLabel">USD ${money(calcConfig.displayMode === 'total' ? d.final : d.finalPax)}</div>
@@ -158,7 +158,7 @@ function renderFloatingCalculatorBody(popupElement) {
         </div>
       </div>
       ` : `
-      <div class="calc-result-card calc-result-card error" style="grid-column: 1 / -1; text-align: center;">
+      <div class="calc-result-card calc-result-card error">
         <div class="calc-result-label">Estado</div>
         <div class="calc-result-value">Ingrese un precio válido<br><small>El precio neto debe ser mayor a 0</small></div>
       </div>
