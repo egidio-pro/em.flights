@@ -12,54 +12,188 @@ let config     = { passengers: 1, margin: 10, bok: 0.8, enabled: true, displayMo
 let popup      = null;
 let currentNet = null;
 let saveTimer  = null;
+let isInitialized = false;
+let mutationObserver = null;
 
-const PRICE_SELECTORS = '.priceNumb, .price-numb, [class*="priceNumb"], .totalPrice, .amount';
+const PRICE_SELECTORS = '.priceNumb, .price-numb, [class*="priceNumb"], .totalPrice, .amount, [data-price], [class*="price"]';
 
 async function init() {
+  if (isInitialized) {
+    console.log('[EM Flights] Already initialized, skipping...');
+    return;
+  }
+
   try {
+    console.log('[EM Flights] Initializing extension...');
     const st = await chrome.storage.sync.get({ passengers:1, margin:10, bok:0.8, enabled:true, displayMode:'total' });
     config = { ...config, ...st };
+    isInitialized = true;
+
+    // Add click listener with error handling
     document.addEventListener('click', handleGlobalClick, true);
+    console.log('[EM Flights] Click listener attached');
+
+    // Setup MutationObserver for SPA navigation
+    setupMutationObserver();
+
+    // Validate setup periodically
+    setInterval(validateSetup, 5000);
+
+    console.log('[EM Flights] Initialization complete');
   } catch(e) {
     console.error('[EM Flights] Error init:', e);
   }
 }
 
+function setupMutationObserver() {
+  if (mutationObserver) {
+    mutationObserver.disconnect();
+  }
+
+  mutationObserver = new MutationObserver((mutations) => {
+    let shouldCheck = false;
+    for (const mutation of mutations) {
+      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+        // Check if new nodes contain price elements
+        for (const node of mutation.addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE &&
+              (node.matches && node.matches(PRICE_SELECTORS) ||
+               node.querySelector && node.querySelector(PRICE_SELECTORS))) {
+            shouldCheck = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (shouldCheck) {
+      console.log('[EM Flights] Detected potential price elements, validating setup...');
+      validateSetup();
+    }
+  });
+
+  mutationObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  console.log('[EM Flights] MutationObserver attached');
+}
+
+function validateSetup() {
+  if (!isInitialized) return;
+
+  try {
+    // Check if click listener is still attached
+    const testElement = document.createElement('div');
+    testElement.setAttribute('class', 'priceNumb');
+    testElement.textContent = '123';
+    document.body.appendChild(testElement);
+
+    // Simulate click to test
+    const event = new MouseEvent('click', { bubbles: true });
+    testElement.dispatchEvent(event);
+
+    document.body.removeChild(testElement);
+
+    // If we get here without errors, setup is working
+    console.log('[EM Flights] Setup validation passed');
+  } catch(e) {
+    console.warn('[EM Flights] Setup validation failed, reinitializing...', e);
+    reinitialize();
+  }
+}
+
+function reinitialize() {
+  console.log('[EM Flights] Reinitializing...');
+  destroyPopup();
+  isInitialized = false;
+  if (mutationObserver) {
+    mutationObserver.disconnect();
+    mutationObserver = null;
+  }
+  document.removeEventListener('click', handleGlobalClick, true);
+  init();
+}
+
 function handleGlobalClick(e) {
-  if (!config.enabled) return;
-  const el = e.target.closest(PRICE_SELECTORS);
-  if (e.altKey) console.log('[EM Flights] Debug:', e.target.className);
-  if (!el) return;
+  try {
+    if (!isInitialized) {
+      console.warn('[EM Flights] Click received but extension not initialized');
+      return;
+    }
 
-  e.preventDefault();
-  e.stopPropagation();
-  e.stopImmediatePropagation();
+    if (!config.enabled) {
+      console.log('[EM Flights] Click ignored - extension disabled');
+      return;
+    }
 
-  const net = parsePrice(el.textContent);
-  if (isNaN(net) || net <= 0) return;
+    const el = e.target.closest(PRICE_SELECTORS);
+    if (e.altKey) {
+      console.log('[EM Flights] Debug - Target:', e.target.className, 'Closest price element:', el);
+      console.log('[EM Flights] Debug - All price selectors found:', document.querySelectorAll(PRICE_SELECTORS).length);
+    }
 
-  if (popup && popup.isConnected) {
-    currentNet = net;
-    refreshPopupData(net);
-  } else {
-    currentNet = net;
-    popup = createPopup(net);
-    document.body.appendChild(popup);
-    positionPopup(popup, el.getBoundingClientRect());
-    makeDraggable(popup);
-    makeResizable(popup);
-    document.addEventListener('keydown', onEsc);
+    if (!el) {
+      // Log potential missed clicks for debugging
+      if (e.altKey) {
+        console.log('[EM Flights] No price element found for click target:', e.target);
+      }
+      return;
+    }
+
+    console.log('[EM Flights] Price element clicked:', el.textContent);
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    const net = parsePrice(el.textContent);
+    console.log('[EM Flights] Parsed price:', net);
+
+    if (isNaN(net) || net <= 0) {
+      console.warn('[EM Flights] Invalid price parsed:', el.textContent, '->', net);
+      return;
+    }
+
+    if (popup && popup.isConnected) {
+      console.log('[EM Flights] Updating existing popup with new price');
+      currentNet = net;
+      refreshPopupData(net);
+    } else {
+      console.log('[EM Flights] Creating new popup');
+      currentNet = net;
+      popup = createPopup(net);
+      document.body.appendChild(popup);
+      positionPopup(popup, el.getBoundingClientRect());
+      makeDraggable(popup);
+      makeResizable(popup);
+      document.addEventListener('keydown', onEsc);
+    }
+  } catch(error) {
+    console.error('[EM Flights] Error in handleGlobalClick:', error);
+    // Try to recover by reinitializing
+    setTimeout(() => reinitialize(), 1000);
   }
 }
 
 chrome.runtime.onMessage.addListener((msg, sender) => {
-  if (sender.id !== chrome.runtime.id) return;
-  if (msg.type === 'TOGGLE_STATE') {
-    config.enabled = msg.enabled;
-    if (!config.enabled) destroyPopup();
-  } else if (msg.type === 'CONFIG_UPDATED') {
-    if (msg.config.passengers !== undefined) config.passengers = msg.config.passengers;
-    if (popup && popup.isConnected) renderPopupBody();
+  try {
+    if (sender.id !== chrome.runtime.id) return;
+
+    console.log('[EM Flights] Received message:', msg.type);
+
+    if (msg.type === 'TOGGLE_STATE') {
+      config.enabled = msg.enabled;
+      console.log('[EM Flights] Extension', config.enabled ? 'enabled' : 'disabled');
+      if (!config.enabled) destroyPopup();
+    } else if (msg.type === 'CONFIG_UPDATED') {
+      if (msg.config.passengers !== undefined) config.passengers = msg.config.passengers;
+      if (popup && popup.isConnected) renderPopupBody();
+      console.log('[EM Flights] Config updated:', msg.config);
+    }
+  } catch(error) {
+    console.error('[EM Flights] Error handling message:', error);
   }
 });
 
@@ -290,7 +424,31 @@ function makeResizable(el) {
   };
 }
 
-function destroyPopup() { if (popup) { popup.remove(); popup = null; } }
+function destroyPopup() {
+  if (popup) {
+    popup.remove();
+    popup = null;
+    document.removeEventListener('keydown', onEsc);
+    console.log('[EM Flights] Popup destroyed');
+  }
+}
+
 function onEsc(e) { if (e.key === 'Escape') destroyPopup(); }
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  if (mutationObserver) {
+    mutationObserver.disconnect();
+  }
+  destroyPopup();
+});
+
+// Handle visibility changes (tab switching, etc.)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    console.log('[EM Flights] Page hidden, cleaning up popup');
+    destroyPopup();
+  }
+});
 
 init();
