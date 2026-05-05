@@ -112,253 +112,449 @@
 
     #toggleBtn { cursor: pointer; transition: transform 0.1s; }
 
-    /* Modal Overlay Styles */
+    /* Enhanced Modal Overlay Styles */
     .calc-modal-overlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(8px);
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(12px) saturate(180%);
       z-index: 10000;
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: modalFadeIn 0.3s ease-out;
+      animation: modalFadeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     @keyframes modalFadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+      }
+      to {
+        opacity: 1;
+        backdrop-filter: blur(12px) saturate(180%);
+      }
     }
 
-    /* Floating Calculator Styles - matching the original design */
+    /* Enhanced Floating Calculator Styles */
     .calc-floating-popup {
       position: relative;
-      width: 290px;
-      background: var(--bg);
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+      width: 320px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%);
+      backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 28px;
+      box-shadow:
+        0 25px 60px rgba(0,0,0,0.15),
+        0 8px 32px rgba(0,0,0,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.8);
       color: var(--text);
-      font-family: -apple-system, system-ui, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
       transform: scale(1);
       overflow: hidden;
-      animation: popupSlideIn 0.3s ease-out;
+      animation: popupSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
       z-index: 10001;
     }
 
     @keyframes popupSlideIn {
       from {
         opacity: 0;
-        transform: scale(0.9) translateY(-20px);
+        transform: scale(0.85) translateY(-30px) rotate(-2deg);
       }
       to {
         opacity: 1;
-        transform: scale(1) translateY(0);
+        transform: scale(1) translateY(0) rotate(0deg);
       }
     }
 
     .calc-floating-header {
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(0,0,0,0.03);
-      border-bottom: 1px solid var(--border);
+      padding: 20px 24px 16px;
+      background: linear-gradient(135deg, rgba(0,113,227,0.08) 0%, rgba(0,113,227,0.04) 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      position: relative;
       cursor: grab;
+    }
+
+    .calc-floating-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(0,113,227,0.02) 0%, transparent 70%);
+      pointer-events: none;
     }
 
     .calc-floating-brand {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
     }
 
     .calc-floating-brand-icon {
-      width: 24px;
-      height: 24px;
-      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
       display: block;
       object-fit: contain;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow:
+        0 4px 12px rgba(0,113,227,0.2),
+        0 2px 6px rgba(0,0,0,0.1);
+      border: 2px solid rgba(255,255,255,0.8);
     }
 
     .calc-floating-brand-name {
-      font-weight: 700;
-      font-size: 15px;
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--accent);
+      letter-spacing: -0.5px;
     }
 
     .calc-floating-close {
-      background: none;
-      border: none;
-      font-size: 18px;
+      background: rgba(255,255,255,0.8);
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 16px;
       cursor: pointer;
       color: var(--text);
-      opacity: 0.6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      position: relative;
+      z-index: 1;
     }
 
     .calc-floating-close:hover {
-      opacity: 1;
-      color: #D70015;
+      background: #ff4757;
+      color: white;
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(255,71,87,0.3);
     }
 
     .calc-floating-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+    }
+
+    /* Enhanced Section Styling */
+    .calc-section {
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 16px;
       padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
+      box-shadow:
+        0 4px 16px rgba(0,0,0,0.04),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+      position: relative;
     }
 
-    .calc-floating-info-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    .calc-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent) 0%, rgba(0,113,227,0.6) 100%);
+      border-radius: 16px 16px 0 0;
     }
 
-    .calc-floating-info-chip {
-      background: rgba(0,0,0,0.04);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 10px 6px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .calc-floating-chip-label {
-      font-size: 10px;
+    .calc-section-title {
+      font-size: 12px;
       font-weight: 700;
-      color: var(--text-sec);
-      text-transform: uppercase;
-    }
-
-    .calc-floating-chip-value {
-      font-size: 16px;
-      font-weight: 800;
-    }
-
-    .calc-floating-manual-input {
-      width: 100%;
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 16px;
-      font-weight: 800;
-      text-align: center;
-      color: var(--text);
-      margin-top: 4px;
-    }
-
-    .calc-floating-manual-input:focus {
-      outline: 1px solid var(--accent);
-      background: rgba(0, 113, 227, 0.05);
-    }
-
-    .calc-floating-input-group {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .calc-floating-step {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      background: white;
       color: var(--accent);
-      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .calc-section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(0,113,227,0.3) 0%, transparent 100%);
+    }
+
+    /* Enhanced Input Controls */
+    .calc-input-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,0.8);
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 12px;
+      padding: 12px 16px;
+      transition: all 0.2s ease;
+    }
+
+    .calc-input-control:hover {
+      background: rgba(255,255,255,0.95);
+      border-color: var(--accent);
+      box-shadow: 0 2px 8px rgba(0,113,227,0.1);
+    }
+
+    .calc-input-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      min-width: 60px;
+      flex-shrink: 0;
+    }
+
+    .calc-input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .calc-step-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: rgba(0,113,227,0.1);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 16px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.2s ease;
+      position: relative;
     }
 
-    .calc-floating-step:hover {
+    .calc-step-btn:hover {
       background: var(--accent);
       color: white;
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0,113,227,0.3);
     }
 
-    .calc-floating-switcher {
+    .calc-step-btn:active {
+      transform: scale(0.95);
+    }
+
+    .calc-number-input {
+      width: 80px;
+      background: rgba(255,255,255,0.9);
+      border: 2px solid rgba(0,0,0,0.08);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 16px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--text);
+      transition: all 0.2s ease;
+    }
+
+    .calc-number-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(0,113,227,0.1);
+    }
+
+    /* Price Input Special Styling */
+    .calc-price-input {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.8) 100%);
+      border: 2px solid rgba(0,113,227,0.2);
+      border-radius: 12px;
+      padding: 16px 20px;
+      font-size: 18px;
+      font-weight: 800;
+      text-align: center;
+      color: var(--accent);
+      transition: all 0.3s ease;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .calc-price-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: white;
+      box-shadow:
+        0 0 0 3px rgba(0,113,227,0.15),
+        inset 0 2px 4px rgba(0,0,0,0.05);
+      transform: scale(1.02);
+    }
+
+    .calc-price-input::placeholder {
+      color: rgba(0,113,227,0.5);
+      font-weight: 600;
+    }
+
+    /* Enhanced Switcher */
+    .calc-mode-switcher {
       display: flex;
-      background: rgba(0,0,0,0.06);
-      border-radius: 10px;
-      padding: 2px;
+      background: linear-gradient(135deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.02) 100%);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 12px;
+      padding: 4px;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
     }
 
-    .calc-floating-switch-btn {
+    .calc-mode-btn {
       flex: 1;
       border: none;
       background: transparent;
-      padding: 6px;
-      font-size: 11px;
-      font-weight: 600;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 700;
       cursor: pointer;
       border-radius: 8px;
       color: var(--text-sec);
+      transition: all 0.3s ease;
+      position: relative;
     }
 
-    .calc-floating-switch-btn.active {
-      background: white;
+    .calc-mode-btn.active {
+      background: linear-gradient(135deg, var(--accent) 0%, rgba(0,113,227,0.8) 100%);
+      color: white;
+      box-shadow:
+        0 4px 12px rgba(0,113,227,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+      transform: translateY(-1px);
+    }
+
+    .calc-mode-btn:hover:not(.active) {
+      background: rgba(255,255,255,0.8);
       color: var(--accent);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
 
-    .calc-floating-card {
-      padding: 12px 16px;
-      border-radius: 16px;
-      border: 1px solid var(--border);
+    /* Enhanced Result Cards */
+    .calc-result-card {
+      padding: 20px 24px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.3);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
     }
 
-    .calc-floating-card-blue {
-      background: rgba(0, 113, 227, 0.08);
-      border-left: 5px solid var(--accent);
+    .calc-result-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(90deg, var(--accent) 0%, rgba(0,113,227,0.6) 100%);
     }
 
-    .calc-floating-card-green {
-      background: rgba(30, 122, 60, 0.08);
-      border-left: 5px solid #1E7A3C;
+    .calc-result-card:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 24px rgba(0,0,0,0.1),
+        0 4px 12px rgba(0,113,227,0.1);
     }
 
-    .calc-floating-card-title {
-      font-size: 11px;
+    .calc-result-card.success {
+      background: linear-gradient(135deg, rgba(30,122,60,0.1) 0%, rgba(30,122,60,0.05) 100%);
+      border-left: 4px solid #1E7A3C;
+    }
+
+    .calc-result-card.primary {
+      background: linear-gradient(135deg, rgba(0,113,227,0.1) 0%, rgba(0,113,227,0.05) 100%);
+      border-left: 4px solid var(--accent);
+    }
+
+    .calc-result-card.error {
+      background: linear-gradient(135deg, rgba(220,38,38,0.1) 0%, rgba(220,38,38,0.05) 100%);
+      border-left: 4px solid #DC2626;
+    }
+
+    .calc-result-label {
+      font-size: 12px;
       font-weight: 600;
       color: var(--text-sec);
-      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
     }
 
-    .calc-floating-card-main {
-      font-size: 22px;
+    .calc-result-value {
+      font-size: 28px;
       font-weight: 900;
       color: var(--accent);
+      line-height: 1;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
 
-    .calc-floating-card-green .calc-floating-card-main {
+    .calc-result-card.success .calc-result-value {
       color: #1E7A3C;
     }
 
-    /* Dark mode adjustments */
+    .calc-result-card.error .calc-result-value {
+      color: #DC2626;
+      font-size: 16px;
+    }
+
+    /* Dark mode enhancements */
     @media (prefers-color-scheme: dark) {
       .calc-floating-popup {
-        background: rgba(28, 28, 30, 0.98);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: linear-gradient(145deg, rgba(28,28,30,0.95) 0%, rgba(28,28,30,0.9) 100%);
+        border: 1px solid rgba(255,255,255,0.15);
       }
 
       .calc-floating-header {
-        background: rgba(255,255,255,0.03);
+        background: linear-gradient(135deg, rgba(0,113,227,0.15) 0%, rgba(0,113,227,0.08) 100%);
       }
 
-      .calc-floating-info-chip {
+      .calc-section {
         background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
       }
 
-      .calc-floating-step {
-        border: 1px solid rgba(255, 255, 255, 0.2);
+      .calc-input-control {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+
+      .calc-input-control:hover {
+        background: rgba(255,255,255,0.1);
+      }
+
+      .calc-number-input {
+        background: rgba(255,255,255,0.1);
+        border: 2px solid rgba(255,255,255,0.15);
+        color: white;
+      }
+
+      .calc-price-input {
+        background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+        border: 2px solid rgba(0,113,227,0.3);
+      }
+
+      .calc-result-card {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+
+      .calc-result-card.success {
+        background: linear-gradient(135deg, rgba(30,122,60,0.15) 0%, rgba(30,122,60,0.08) 100%);
+      }
+
+      .calc-result-card.primary {
+        background: linear-gradient(135deg, rgba(0,113,227,0.15) 0%, rgba(0,113,227,0.08) 100%);
       }
     }
   </style>

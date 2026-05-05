@@ -88,61 +88,82 @@ function renderFloatingCalculatorBody(popupElement) {
   const d = calc(currentCalcNet || 0);
 
   body.innerHTML = `
-    <div class="calc-floating-info-row">
-      <div class="calc-floating-info-chip">
-        <span class="calc-floating-chip-label">Neto GWC</span>
-        <input type="number" class="calc-floating-manual-input" id="floatingCalcNetInput" value="${currentCalcNet || ''}" placeholder="Precio neto" step="0.01" min="0">
+    <!-- Price Input Section (Top) -->
+    <div class="calc-section">
+      <div class="calc-section-title">
+        💰 Precio Base
       </div>
-      <div class="calc-floating-info-chip">
-        <span class="calc-floating-chip-label">Pasajeros</span>
-        <div class="calc-floating-input-group">
-          <button class="calc-floating-step" data-key="passengers" data-v="-1">-</button>
-          <input type="number" class="calc-floating-manual-input" data-key="passengers" value="${calcConfig.passengers}" step="1" min="1" style="width: 52px;">
-          <button class="calc-floating-step" data-key="passengers" data-v="1">+</button>
+      <input type="number" class="calc-price-input" id="floatingCalcNetInput" value="${currentCalcNet || ''}" placeholder="Ingrese precio neto GWC" step="0.01" min="0">
+    </div>
+
+    <!-- Configuration Section (Middle) -->
+    <div class="calc-section">
+      <div class="calc-section-title">
+        ⚙️ Configuración
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="calc-input-control">
+          <span class="calc-input-label">Pasajeros</span>
+          <div class="calc-input-group">
+            <button class="calc-step-btn" data-key="passengers" data-v="-1">−</button>
+            <input type="number" class="calc-number-input" data-key="passengers" value="${calcConfig.passengers}" step="1" min="1">
+            <button class="calc-step-btn" data-key="passengers" data-v="1">+</button>
+          </div>
+        </div>
+
+        <div class="calc-input-control">
+          <span class="calc-input-label">Margen %</span>
+          <div class="calc-input-group">
+            <button class="calc-step-btn" data-key="margin" data-v="-0.5">−</button>
+            <input type="number" class="calc-number-input" data-key="margin" value="${calcConfig.margin}" step="0.1">
+            <button class="calc-step-btn" data-key="margin" data-v="0.5">+</button>
+          </div>
+        </div>
+
+        <div class="calc-input-control">
+          <span class="calc-input-label">Booking %</span>
+          <div class="calc-input-group">
+            <button class="calc-step-btn" data-key="bok" data-v="-0.1">−</button>
+            <input type="number" class="calc-number-input" data-key="bok" value="${calcConfig.bok}" step="0.1">
+            <button class="calc-step-btn" data-key="bok" data-v="0.1">+</button>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: center; margin-top: 8px;">
+          <div class="calc-mode-switcher">
+            <button class="calc-mode-btn ${calcConfig.displayMode === 'total' ? 'active' : ''}" data-m="total">Total</button>
+            <button class="calc-mode-btn ${calcConfig.displayMode === 'pax' ? 'active' : ''}" data-m="pax">Por Pax</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="calc-floating-switcher">
-      <button class="calc-floating-switch-btn ${calcConfig.displayMode === 'total' ? 'active' : ''}" data-m="total">Total</button>
-      <button class="calc-floating-switch-btn ${calcConfig.displayMode === 'pax' ? 'active' : ''}" data-m="pax">Por Pax</button>
-    </div>
+    <!-- Results Section (Bottom) -->
+    <div class="calc-section">
+      <div class="calc-section-title">
+        📊 Resultados
+      </div>
 
-    <div class="calc-floating-info-row">
-      <div class="calc-floating-info-chip">
-        <span class="calc-floating-chip-label">Margen (%)</span>
-        <div class="calc-floating-input-group">
-          <button class="calc-floating-step" data-key="margin" data-v="-0.5">-</button>
-          <input type="number" class="calc-floating-manual-input" data-key="margin" value="${calcConfig.margin}" step="0.1" style="width: 52px;">
-          <button class="calc-floating-step" data-key="margin" data-v="0.5">+</button>
+      ${d ? `
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="calc-result-card calc-result-card primary">
+          <div class="calc-result-label">Precio Final ${calcConfig.displayMode === 'total' ? '(Total)' : '(Por Pax)'}</div>
+          <div class="calc-result-value" id="floatingCalcFinalLabel">USD ${money(calcConfig.displayMode === 'total' ? d.final : d.finalPax)}</div>
+        </div>
+
+        <div class="calc-result-card calc-result-card success">
+          <div class="calc-result-label">Ganancia ${calcConfig.displayMode === 'total' ? '(Total)' : '(Por Pax)'}</div>
+          <div class="calc-result-value" id="floatingCalcProfitLabel">USD ${money(calcConfig.displayMode === 'total' ? d.profit : d.profitPax)}</div>
         </div>
       </div>
-      <div class="calc-floating-info-chip">
-        <span class="calc-floating-chip-label">Bok (%)</span>
-        <div class="calc-floating-input-group">
-          <button class="calc-floating-step" data-key="bok" data-v="-0.1">-</button>
-          <input type="number" class="calc-floating-manual-input" data-key="bok" value="${calcConfig.bok}" step="0.1" style="width: 52px;">
-          <button class="calc-floating-step" data-key="bok" data-v="0.1">+</button>
-        </div>
+      ` : `
+      <div class="calc-result-card calc-result-card error" style="grid-column: 1 / -1; text-align: center;">
+        <div class="calc-result-label">Estado</div>
+        <div class="calc-result-value">Ingrese un precio válido<br><small>El precio neto debe ser mayor a 0</small></div>
       </div>
+      `}
     </div>
-
-    ${d ? `
-    <div class="calc-floating-card calc-floating-card-blue">
-      <div class="calc-floating-card-title">Precio final al cliente <span style="font-weight:400">(${calcConfig.displayMode === 'total' ? 'Total' : 'Pax'})</span></div>
-      <div class="calc-floating-card-main" id="floatingCalcFinalLabel">USD ${money(calcConfig.displayMode === 'total' ? d.final : d.finalPax)}</div>
-    </div>
-
-    <div class="calc-floating-card calc-floating-card-green">
-      <div class="calc-floating-card-title">Ganancia neta <span style="font-weight:400">(${calcConfig.displayMode === 'total' ? 'Total' : 'Pax'})</span></div>
-      <div class="calc-floating-card-main" id="floatingCalcProfitLabel">USD ${money(calcConfig.displayMode === 'total' ? d.profit : d.profitPax)}</div>
-    </div>
-    ` : `
-    <div class="calc-floating-card" style="text-align: center; background: rgba(220, 38, 38, 0.08); border-left: 4px solid #DC2626;">
-      <div class="calc-floating-card-title">Ingrese un precio válido</div>
-      <div style="font-size: 12px; color: var(--text-sec);">El precio neto debe ser mayor a 0</div>
-    </div>
-    `}
   `;
 
   // Add event listeners
@@ -153,10 +174,12 @@ function renderFloatingCalculatorBody(popupElement) {
       currentCalcNet = isNaN(val) || val <= 0 ? null : val;
       renderFloatingCalculatorBody(popupElement);
     });
-    netInput.focus(); // Auto-focus on price input
+    // Auto-focus on price input after a brief delay to ensure DOM is ready
+    setTimeout(() => netInput.focus(), 100);
   }
 
-  body.querySelectorAll('.calc-floating-switch-btn').forEach(btn => {
+  // Mode switcher buttons
+  body.querySelectorAll('.calc-mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       calcConfig.displayMode = btn.dataset.m;
       chrome.storage.sync.set({ displayMode: calcConfig.displayMode });
@@ -164,7 +187,8 @@ function renderFloatingCalculatorBody(popupElement) {
     });
   });
 
-  body.querySelectorAll('.calc-floating-step').forEach(btn => {
+  // Enhanced step buttons (+/-)
+  body.querySelectorAll('.calc-step-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const key = btn.dataset.key;
       const val = parseFloat(btn.dataset.v);
@@ -172,10 +196,15 @@ function renderFloatingCalculatorBody(popupElement) {
       if (key === 'passengers') calcConfig[key] = Math.max(1, calcConfig[key]);
       chrome.storage.sync.set(calcConfig);
       renderFloatingCalculatorBody(popupElement);
+
+      // Add visual feedback
+      btn.style.transform = 'scale(0.9)';
+      setTimeout(() => btn.style.transform = '', 150);
     });
   });
 
-  body.querySelectorAll('.calc-floating-manual-input[data-key]').forEach(input => {
+  // Number input fields
+  body.querySelectorAll('.calc-number-input[data-key]').forEach(input => {
     input.addEventListener('input', (e) => {
       const key = input.dataset.key;
       let val = parseFloat(e.target.value);
@@ -185,6 +214,19 @@ function renderFloatingCalculatorBody(popupElement) {
       calcConfig[key] = val;
       chrome.storage.sync.set(calcConfig);
       renderFloatingCalculatorBody(popupElement);
+    });
+
+    input.addEventListener('blur', (e) => {
+      // Ensure valid values on blur
+      const key = input.dataset.key;
+      let val = parseFloat(e.target.value);
+      if (isNaN(val) || val < 0) {
+        val = key === 'passengers' ? 1 : 0;
+      }
+      if (key === 'passengers' && val < 1) val = 1;
+      e.target.value = val;
+      calcConfig[key] = val;
+      chrome.storage.sync.set(calcConfig);
     });
   });
 }
