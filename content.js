@@ -395,6 +395,9 @@ function applyModeToDOM(el, mode) {
   const badge = el.querySelector('#voeBadge');
   const netLabel = el.querySelector('#voeNetLabel');
   const footerNote = el.querySelector('#voeFooterNote');
+  const paxMinus = el.querySelector('#voePaxMinus');
+  const paxPlus = el.querySelector('#voePaxPlus');
+  const paxInput = el.querySelector('#voePaxInput');
 
   if (badge) {
     badge.className = `voe-badge-pill ${isGwc ? 'voe-badge-gwc' : 'voe-badge-manual'}`;
@@ -404,7 +407,20 @@ function applyModeToDOM(el, mode) {
     netLabel.textContent = isGwc ? 'NETO GWC' : 'NETO MANUAL';
   }
   if (footerNote) {
-    footerNote.textContent = isGwc ? 'CALCULADO SEGUN PARAMETROS GWC V2.4' : 'CALCULADORA MANUAL INDEPENDIENTE V2.1.2';
+    footerNote.textContent = isGwc
+      ? '⚠️ Asegúrate de que los datos y pasajeros se hayan tomado correctamente'
+      : 'ℹ️ Modo Manual · Verifica los valores antes de cotizar';
+  }
+  if (paxMinus && paxPlus) {
+    paxMinus.style.display = isGwc ? 'none' : 'flex';
+    paxPlus.style.display = isGwc ? 'none' : 'flex';
+  }
+  if (paxInput) {
+    if (isGwc) {
+      paxInput.setAttribute('readonly', 'true');
+    } else {
+      paxInput.removeAttribute('readonly');
+    }
   }
 }
 
@@ -442,18 +458,20 @@ function renderCalculatorDOM(initialNet, mode) {
 
       <div class="voe-mini-card">
         <span class="voe-mini-label">PASAJEROS</span>
-        <div class="voe-stepper">
-          <button class="voe-btn-step" data-field="passengers" data-step="-1">−</button>
+        <div class="voe-stepper" id="voePaxStepper">
+          <button class="voe-btn-step" data-field="passengers" data-step="-1" id="voePaxMinus"
+                  style="${isGwc ? 'display: none !important;' : ''}">−</button>
           <input type="number" id="voePaxInput" class="voe-step-val-input"
-                 value="${config.passengers}" min="1" step="1">
-          <button class="voe-btn-step" data-field="passengers" data-step="1">+</button>
+                 value="${config.passengers}" min="1" step="1" ${isGwc ? 'readonly' : ''}>
+          <button class="voe-btn-step" data-field="passengers" data-step="1" id="voePaxPlus"
+                  style="${isGwc ? 'display: none !important;' : ''}">+</button>
         </div>
       </div>
     </div>
 
-    <!-- Fila 2: Margen (%) / Bok (%) -->
-    <div class="voe-grid-row">
-      <div class="voe-mini-card">
+    <!-- Fila 2: Margen (Principal + Entrada Rápida) y Bok/Costo Financiero (en chiquito) -->
+    <div class="voe-card-margin-bok">
+      <div class="voe-margin-header">
         <span class="voe-mini-label">MARGEN (%)</span>
         <div class="voe-stepper">
           <button class="voe-btn-step" data-field="margin" data-step="-0.5">−</button>
@@ -462,14 +480,22 @@ function renderCalculatorDOM(initialNet, mode) {
           <button class="voe-btn-step" data-field="margin" data-step="0.5">+</button>
         </div>
       </div>
+      <div class="voe-margin-chips" id="voeMarginChips">
+        <button class="voe-margin-chip ${config.margin === 8 ? 'active' : ''}" data-margin="8">8%</button>
+        <button class="voe-margin-chip ${config.margin === 10 ? 'active' : ''}" data-margin="10">10%</button>
+        <button class="voe-margin-chip ${config.margin === 14 ? 'active' : ''}" data-margin="14">14%</button>
+        <button class="voe-margin-chip ${config.margin === 20 ? 'active' : ''}" data-margin="20">20%</button>
+      </div>
 
-      <div class="voe-mini-card">
-        <span class="voe-mini-label">BOK (%)</span>
-        <div class="voe-stepper">
-          <button class="voe-btn-step" data-field="bok" data-step="-0.1">−</button>
-          <input type="number" id="voeBokInput" class="voe-step-val-input"
+      <!-- Bok / Costo Financiero en chiquito -->
+      <div class="voe-bok-subrow">
+        <span class="voe-bok-label">Bok/Costo Financiero</span>
+        <div class="voe-bok-stepper">
+          <button class="voe-btn-bok-step" data-step="-0.1">−</button>
+          <input type="number" id="voeBokInput" class="voe-bok-input"
                  value="${config.bok}" step="0.1" min="0">
-          <button class="voe-btn-step" data-field="bok" data-step="0.1">+</button>
+          <span class="voe-bok-pct">%</span>
+          <button class="voe-btn-bok-step" data-step="0.1">+</button>
         </div>
       </div>
     </div>
@@ -506,29 +532,28 @@ function renderCalculatorDOM(initialNet, mode) {
       </div>
     </div>
 
-    <!-- Fila 5: Tarjeta Azul (Precio Final - Total en destaque y pax en chiquito) -->
+    <!-- Fila 5: Tarjeta Azul (TOTAL A COBRAR - Destaque Principal) -->
     <div class="voe-banner-blue" id="voeFinalBanner" title="Clic para copiar cotización">
       <div class="voe-banner-header">
         <span class="voe-banner-blue-title" id="voeFinalTitle">TOTAL A COBRAR</span>
-        <span class="voe-pax-badge" id="voeFinalPaxLabel">USD 0 / pax</span>
+        <span class="voe-pax-badge" id="voeFinalPaxLabel" style="display: none;">USD 0 / pax</span>
       </div>
       <div class="voe-banner-blue-val" id="voeFinalLabel">USD 0</div>
       <div class="voe-banner-subline" id="voeBannerSubline" style="display: none;"></div>
       <div class="voe-copied-hint" id="voeCopyHint" style="display: none;">✓ ¡COPIADO AL PORTAPAPELES!</div>
     </div>
 
-    <!-- Fila 6: Tarjeta Verde (Ganancia Neta - Total en destaque y pax en chiquito) -->
+    <!-- Fila 6: Tarjeta Verde (GANANCIA NETA - Solo valor de ganancia) -->
     <div class="voe-banner-green">
       <div class="voe-banner-header">
         <span class="voe-banner-green-title">GANANCIA NETA</span>
-        <span class="voe-pax-badge green" id="voeProfitPaxLabel">USD 0 / pax</span>
       </div>
       <div class="voe-banner-green-val" id="voeProfitLabel">USD 0</div>
     </div>
 
-    <!-- Footer -->
+    <!-- Footer con aviso preventivo -->
     <div class="voe-footer-note" id="voeFooterNote">
-      ${isGwc ? 'CALCULADO SEGUN PARAMETROS GWC V2.4' : 'CALCULADORA MANUAL INDEPENDIENTE V2.1.2'}
+      ${isGwc ? '⚠️ Asegúrate de que los datos y pasajeros se hayan tomado correctamente' : 'ℹ️ Modo Manual · Verifica los valores antes de cotizar'}
     </div>
 
     <div class="voe-resize-handle" title="Arrastra para redimensionar"></div>
@@ -544,7 +569,7 @@ function renderCalculatorDOM(initialNet, mode) {
     updateCalculatorUI();
   });
 
-  // Botones +/- generales
+  // Botones +/- generales (pasajeros y margen)
   div.querySelectorAll('.voe-btn-step').forEach(btn => {
     btn.addEventListener('click', () => {
       const field = btn.dataset.field;
@@ -555,10 +580,30 @@ function renderCalculatorDOM(initialNet, mode) {
       } else if (field === 'margin') {
         config.margin = Math.max(0, parseFloat((config.margin + step).toFixed(2)));
         div.querySelector('#voeMarginInput').value = config.margin;
-      } else if (field === 'bok') {
-        config.bok = Math.max(0, parseFloat((config.bok + step).toFixed(2)));
-        div.querySelector('#voeBokInput').value = config.bok;
       }
+      persistConfig();
+      updateCalculatorUI();
+    });
+  });
+
+  // Chips de Margen Rápido (8%, 10%, 14%, 20%)
+  div.querySelectorAll('.voe-margin-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      config.margin = parseFloat(chip.dataset.margin) || 10;
+      const marginInput = div.querySelector('#voeMarginInput');
+      if (marginInput) marginInput.value = config.margin;
+      persistConfig();
+      updateCalculatorUI();
+    });
+  });
+
+  // Stepper Bok en chiquito
+  div.querySelectorAll('.voe-btn-bok-step').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const step = parseFloat(btn.dataset.step) || 0;
+      config.bok = Math.max(0, parseFloat(((config.bok || 0) + step).toFixed(2)));
+      const bokInput = div.querySelector('#voeBokInput');
+      if (bokInput) bokInput.value = config.bok;
       persistConfig();
       updateCalculatorUI();
     });
@@ -648,7 +693,6 @@ function updateCalculatorUI(targetEl = popup) {
   const finalPaxLabel = targetEl.querySelector('#voeFinalPaxLabel');
   const bannerSubline = targetEl.querySelector('#voeBannerSubline');
   const profitLabel = targetEl.querySelector('#voeProfitLabel');
-  const profitPaxLabel = targetEl.querySelector('#voeProfitPaxLabel');
 
   const itauBox = targetEl.querySelector('#voeItauBox');
   const itauTag = targetEl.querySelector('#voeItauDiscountTag');
@@ -678,11 +722,15 @@ function updateCalculatorUI(targetEl = popup) {
     });
   }
 
+  // Actualizar chips activos de margen
+  targetEl.querySelectorAll('.voe-margin-chip').forEach(chip => {
+    chip.classList.toggle('active', parseFloat(chip.dataset.margin) === config.margin);
+  });
+
   if (!d) {
     if (finalLabel) finalLabel.textContent = 'Error: % ≥ 100';
     if (finalPaxLabel) finalPaxLabel.textContent = '—';
     if (profitLabel) profitLabel.textContent = '—';
-    if (profitPaxLabel) profitPaxLabel.textContent = '—';
     return;
   }
 
@@ -706,16 +754,19 @@ function updateCalculatorUI(targetEl = popup) {
     }
   }
 
-  // Formato para mostrar: PRECIO TOTAL EN DESTAQUE Y PRECIO POR PASAJERO EN CHIQUITO
+  // Formato para mostrar: TOTAL A COBRAR EN DESTAQUE Y PRECIO POR PASAJERO (SOLO SI > 1 PAX)
   const paxCount = config.passengers || 1;
-  const paxSuffix = paxCount > 1 ? ` (${paxCount} pax)` : '';
-
   const totalToPay = config.itauActive && d.itauDiscount > 0 ? d.finalToPay : d.final;
   const paxToPay = config.itauActive && d.itauDiscount > 0 ? d.finalToPayPax : d.finalPax;
 
   if (finalLabel) finalLabel.textContent = `USD ${money(totalToPay)}`;
   if (finalPaxLabel) {
-    finalPaxLabel.textContent = `USD ${money(paxToPay)} / pax${paxSuffix}`;
+    if (paxCount > 1) {
+      finalPaxLabel.style.display = 'inline-block';
+      finalPaxLabel.textContent = `USD ${money(paxToPay)} / pax`;
+    } else {
+      finalPaxLabel.style.display = 'none';
+    }
   }
 
   if (config.itauActive && d.itauDiscount > 0) {
@@ -732,11 +783,8 @@ function updateCalculatorUI(targetEl = popup) {
     }
   }
 
-  // GANANCIA NETA EN DESTAQUE Y POR PAX EN CHIQUITO
+  // GANANCIA NETA: Solamente el valor de ganancia neta, sin poner el valor por pax
   if (profitLabel) profitLabel.textContent = `USD ${money(d.profit)}`;
-  if (profitPaxLabel) {
-    profitPaxLabel.textContent = `USD ${money(d.profitPax)} / pax${paxSuffix}`;
-  }
 }
 
 function copyQuotation() {
