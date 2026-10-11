@@ -51,16 +51,14 @@ async function init() {
   }
 }
 
-// Verifica si la página actual corresponde a GWC (gwc.glas.travel) o entornos de prueba
+// Verifica si la página actual corresponde a GWC (gwc.glas.travel)
 function isGwcPage() {
   const host = window.location.hostname || '';
   const href = window.location.href || '';
   return host === 'gwc.glas.travel' ||
          host.endsWith('.gwc.glas.travel') ||
          href.includes('gwc.glas.travel/search') ||
-         href.includes('gwc.glas.travel') ||
-         href.includes('test_gwc_simulation') ||
-         href.includes('Probar_EM_Flights');
+         href.includes('gwc.glas.travel');
 }
 
 function onDocClick(e) {

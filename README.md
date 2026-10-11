@@ -51,7 +51,6 @@ EM Flights/
 │   ├── icon16.png
 │   ├── icon48.png
 │   └── icon128.png
-├── test_gwc_simulation.html   # Suite de pruebas automatizadas y simulador GWC
 ├── LICENSE                    # GNU General Public License v3.0 (GPL-3.0)
 └── README.md                  # Documentación del proyecto
 ```
@@ -60,40 +59,27 @@ EM Flights/
 
 ## 🚀 Instalación en Google Chrome
 
-### Opción A: Modo Desarrollador (Carga descomprimida)
+Puedes instalar la extensión mediante cualquiera de las siguientes opciones:
 
-1. Clona el repositorio o descarga el código fuente:
+### 1. Descargar el archivo en local y subir como extensión de Chrome (Modo Desarrollador)
+
+1. Descarga o clona el código fuente en tu equipo local:
    ```bash
    git clone https://github.com/egidio-pro/em.flights.git
    ```
-2. Abre Google Chrome y navega a:
+2. Abre Google Chrome y accede a:
    ```text
    chrome://extensions/
    ```
-3. Activa la opción **Modo de desarrollador** en la esquina superior derecha.
-4. Haz clic en **Cargar descomprimida** y selecciona la carpeta del proyecto `EM Flights`.
-5. La extensión quedará activa y lista para usar.
+3. Activa la casilla **Modo de desarrollador** en la esquina superior derecha.
+4. Haz clic en el botón **Cargar descomprimida** y selecciona la carpeta del proyecto `EM Flights`.
+5. ¡Listo! La extensión quedará habilitada en tu navegador.
 
-### Opción B: Carga desde archivo ZIP
+### 2. Buscar "EM Flights" en la tienda de extensiones de Google Chrome
 
-1. Descarga el paquete empaquetado `EM_Flights_v2.1.2.zip`.
-2. Descomprímelo en una carpeta local.
-3. Carga la carpeta descomprimida en `chrome://extensions/`.
-
----
-
-## 🧪 Pruebas y Simulación Local
-
-Puedes probar todas las funciones interactivas y la suite de tests automatizados sin necesidad de acceder a GWC:
-
-1. Abre el archivo [`test_gwc_simulation.html`](file:///Users/egidio/Downloads/My%20project/Extensiones/EM%20Flights/test_gwc_simulation.html) o el archivo independiente del Escritorio `Probar_EM_Flights.html` en tu navegador.
-2. Haz clic en **🧪 Ejecutar Tests Automáticos** para verificar:
-   * Parseo de formatos de moneda (`USD 1.250`, `$ 1.480,50`, `USD 1,320.75`).
-   * Fórmula de margen real sobre venta.
-   * Apertura centrada en pantalla con etiqueta `✈️ GWC Auto`.
-   * Conmutador y deducción de Millas Itaú Volar.
-   * Precios unificados (Total y Pax).
-   * Cierre con tecla `Escape [ESC]`.
+1. Ingresa a la [Chrome Web Store](https://chromewebstore.google.com/).
+2. Escribe **"EM Flights"** en la barra de búsqueda.
+3. Haz clic en el resultado correspondiente y presiona el botón **Añadir a Chrome** para instalarla automáticamente.
 
 ---
 
