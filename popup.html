@@ -8,9 +8,9 @@
       --bg: #F8FAFC;
       --card-bg: #FFFFFF;
       --border: #E2E8F0;
-      --text: #1E293B;
+      --text: #0F172A;
       --text-sec: #64748B;
-      --blue-main: #0B57CF;
+      --blue-main: #1D4ED8;
       --green-status: #10B981;
       --info-bg: #EFF6FF;
       --info-text: #1E40AF;
@@ -29,12 +29,12 @@
 
     /* Tarjeta Azul de Cabecera */
     .hd-card {
-      background: linear-gradient(180deg, #0A58CA 0%, #1260D6 100%);
+      background: linear-gradient(135deg, #1E40AF 0%, #1D4ED8 100%);
       border-radius: 18px;
-      padding: 22px 16px 20px;
+      padding: 20px 16px 18px;
       text-align: center;
       color: white;
-      box-shadow: 0 8px 20px rgba(11, 87, 207, 0.25);
+      box-shadow: 0 8px 20px rgba(29, 78, 216, 0.25);
       margin-bottom: 12px;
     }
 
@@ -158,12 +158,15 @@
     .itau-badge {
       font-size: 10px;
       font-weight: 800;
-      color: #EA580C;
+      color: #C2410C;
       background: #FFF7ED;
-      border: 1px solid rgba(234, 88, 12, 0.25);
-      padding: 2px 8px;
-      border-radius: 10px;
-      letter-spacing: 0.3px;
+      border: 1px solid #FED7AA;
+      padding: 2px 7px;
+      border-radius: 8px;
+      letter-spacing: 0.2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
     }
     .itau-title {
       font-size: 12px;
@@ -332,7 +335,14 @@
     <!-- Tarjeta Configuración Millas Itaú Volar -->
     <div class="itau-card">
       <div class="itau-card-header">
-        <span class="itau-badge">💳 Itaú Volar</span>
+        <span class="itau-badge">
+          <svg width="14" height="14" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="28" height="28" rx="6.5" fill="#EC7000"/>
+            <rect x="3.5" y="3.5" width="21" height="21" rx="4.5" fill="#002D62"/>
+            <text x="14" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="10" fill="#FEDD00" text-anchor="middle" letter-spacing="-0.3">itau</text>
+          </svg>
+          Itaú Volar
+        </span>
         <span class="itau-title">Canje de Millas</span>
       </div>
       <div class="itau-fields-row">
@@ -360,7 +370,18 @@
 
     <!-- Botón de Calculadora Manual -->
     <button class="btn-manual" id="openManualCalc">
-      📊 Abrir Calculadora Manual
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="21" x2="4" y2="14"></line>
+        <line x1="4" y1="10" x2="4" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12" y2="3"></line>
+        <line x1="20" y1="21" x2="20" y2="16"></line>
+        <line x1="20" y1="12" x2="20" y2="3"></line>
+        <line x1="1" y1="14" x2="7" y2="14"></line>
+        <line x1="9" y1="8" x2="15" y2="8"></line>
+        <line x1="17" y1="16" x2="23" y2="16"></line>
+      </svg>
+      Abrir Calculadora Manual
     </button>
   </div>
 

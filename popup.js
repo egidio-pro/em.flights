@@ -45,7 +45,7 @@ toggleCheck.addEventListener('change', async () => {
   calcConfig.enabled = next;
   await chrome.storage.sync.set({ enabled: next });
   setToggleUI(next);
-  showToast(next ? '✓ Calculadora Activada' : '⊘ Calculadora Desactivada', 'ok');
+  showToast(next ? 'Calculadora Activada' : 'Calculadora Desactivada', next ? 'ok' : 'error');
 
   broadcastConfig();
 });
@@ -82,7 +82,7 @@ function debouncedSaveItau() {
       itauMileValue: calcConfig.itauMileValue,
       itauMinMiles: calcConfig.itauMinMiles
     });
-    showToast('✓ Millas Itaú guardadas', 'ok');
+    showToast('Millas Itaú guardadas', 'ok');
     broadcastConfig();
   }, 400);
 }
@@ -113,7 +113,7 @@ openManualCalcBtn.addEventListener('click', async () => {
 
   try {
     await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_MANUAL_CALC', config: calcConfig });
-    showToast('✓ Calculadora Manual abierta', 'ok');
+    showToast('Calculadora Manual abierta', 'ok');
     setTimeout(() => window.close(), 400);
   } catch (err) {
     try {
@@ -123,7 +123,7 @@ openManualCalcBtn.addEventListener('click', async () => {
       setTimeout(async () => {
         try {
           await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_MANUAL_CALC', config: calcConfig });
-          showToast('✓ Calculadora Manual abierta', 'ok');
+          showToast('Calculadora Manual abierta', 'ok');
           setTimeout(() => window.close(), 400);
         } catch (e2) {
           showToast('Error al conectar con la pestaña', 'error');

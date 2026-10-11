@@ -390,6 +390,17 @@ function positionCenter(el) {
   el.style.top = `${Math.max(PAD, Math.round((vh - h) / 2))}px`;
 }
 
+const ICONS = {
+  plane: `<svg class="voe-icon" width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>`,
+  manual: `<svg class="voe-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>`,
+  itauLogo: `<svg class="voe-itau-logo" width="14" height="14" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="28" height="28" rx="6.5" fill="#EC7000"/><rect x="3.5" y="3.5" width="21" height="21" rx="4.5" fill="#002D62"/><text x="14" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="10" fill="#FEDD00" text-anchor="middle" letter-spacing="-0.3">itau</text></svg>`,
+  itauLogoLg: `<svg class="voe-itau-logo" width="16" height="16" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="28" height="28" rx="6.5" fill="#EC7000"/><rect x="3.5" y="3.5" width="21" height="21" rx="4.5" fill="#002D62"/><text x="14" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="10" fill="#FEDD00" text-anchor="middle" letter-spacing="-0.3">itau</text></svg>`,
+  warning: `<svg class="voe-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+  info: `<svg class="voe-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
+  check: `<svg class="voe-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  close: `<svg class="voe-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`
+};
+
 function applyModeToDOM(el, mode) {
   const isGwc = mode === 'gwc';
   const badge = el.querySelector('#voeBadge');
@@ -401,15 +412,18 @@ function applyModeToDOM(el, mode) {
 
   if (badge) {
     badge.className = `voe-badge-pill ${isGwc ? 'voe-badge-gwc' : 'voe-badge-manual'}`;
-    badge.textContent = isGwc ? '✈️ GWC' : '📊 Manual';
+    badge.innerHTML = isGwc
+      ? `${ICONS.plane}<span>GWC</span>`
+      : `${ICONS.manual}<span>Manual</span>`;
   }
   if (netLabel) {
     netLabel.textContent = isGwc ? 'NETO GWC' : 'NETO MANUAL';
   }
   if (footerNote) {
-    footerNote.textContent = isGwc
-      ? '⚠️ Asegúrate de que los datos y pasajeros se hayan tomado correctamente'
-      : 'ℹ️ Modo Manual · Verifica los valores antes de cotizar';
+    footerNote.className = `voe-footer-note ${isGwc ? 'warning' : ''}`;
+    footerNote.innerHTML = isGwc
+      ? `${ICONS.warning}<span>Asegúrate de que los datos y pasajeros se hayan tomado correctamente</span>`
+      : `${ICONS.info}<span>Modo Manual · Verifica los valores antes de cotizar</span>`;
   }
   if (paxMinus && paxPlus) {
     paxMinus.style.display = isGwc ? 'none' : 'flex';
@@ -438,11 +452,11 @@ function renderCalculatorDOM(initialNet, mode) {
         <div class="voe-brand-info">
           <span class="voe-brand-name">Calculadora EM</span>
           <span class="voe-badge-pill ${isGwc ? 'voe-badge-gwc' : 'voe-badge-manual'}" id="voeBadge">
-            ${isGwc ? '✈️ GWC' : '📊 Manual'}
+            ${isGwc ? `${ICONS.plane}<span>GWC</span>` : `${ICONS.manual}<span>Manual</span>`}
           </span>
         </div>
       </div>
-      <button class="voe-close" title="Cerrar [ESC]">✕</button>
+      <button class="voe-close" title="Cerrar [ESC]">${ICONS.close}</button>
     </div>
 
     <!-- Fila 1: Neto GWC / Pasajeros -->
@@ -503,13 +517,13 @@ function renderCalculatorDOM(initialNet, mode) {
     <!-- Fila 3: Switcher Activar / Desactivar Cotización con Millas Itaú -->
     <div class="voe-switcher" id="voeItauSwitcher">
       <button class="voe-switch-btn ${!config.itauActive ? 'active' : ''}" data-itau="off">SIN MILLAS</button>
-      <button class="voe-switch-btn ${config.itauActive ? 'active' : ''}" data-itau="on">💳 MILLAS ITAÚ</button>
+      <button class="voe-switch-btn ${config.itauActive ? 'active' : ''}" data-itau="on">${ICONS.itauLogo}<span>MILLAS ITAÚ</span></button>
     </div>
 
     <!-- Fila 4: Tarjeta de Millas Itaú Volar (Desplegable solo si está activo) -->
     <div class="voe-itau-box ${config.itauActive ? 'active' : ''}" id="voeItauBox">
       <div class="voe-itau-box-header">
-        <span class="voe-itau-box-title">💳 Millas Itaú Volar</span>
+        <span class="voe-itau-box-title">${ICONS.itauLogoLg}<span>Millas Itaú Volar</span></span>
         <span class="voe-itau-box-badge" id="voeItauDiscountTag">Sin canje</span>
       </div>
       <div class="voe-itau-controls">
@@ -528,7 +542,7 @@ function renderCalculatorDOM(initialNet, mode) {
         </div>
       </div>
       <div class="voe-itau-msg" id="voeItauStatus">
-        Mínimo 5.000 millas para aplicar descuento
+        ${ICONS.info}<span>Mínimo 5.000 millas para aplicar descuento</span>
       </div>
     </div>
 
@@ -540,7 +554,7 @@ function renderCalculatorDOM(initialNet, mode) {
       </div>
       <div class="voe-banner-blue-val" id="voeFinalLabel">USD 0</div>
       <div class="voe-banner-subline" id="voeBannerSubline" style="display: none;"></div>
-      <div class="voe-copied-hint" id="voeCopyHint" style="display: none;">✓ ¡COPIADO AL PORTAPAPELES!</div>
+      <div class="voe-copied-hint" id="voeCopyHint" style="display: none;">${ICONS.check}<span>¡COPIADO AL PORTAPAPELES!</span></div>
     </div>
 
     <!-- Fila 6: Tarjeta Verde (GANANCIA NETA - Solo valor de ganancia) -->
@@ -551,9 +565,9 @@ function renderCalculatorDOM(initialNet, mode) {
       <div class="voe-banner-green-val" id="voeProfitLabel">USD 0</div>
     </div>
 
-    <!-- Footer con aviso preventivo -->
-    <div class="voe-footer-note" id="voeFooterNote">
-      ${isGwc ? '⚠️ Asegúrate de que los datos y pasajeros se hayan tomado correctamente' : 'ℹ️ Modo Manual · Verifica los valores antes de cotizar'}
+    <!-- Footer con aviso preventivo e iconografía flat -->
+    <div class="voe-footer-note ${isGwc ? 'warning' : ''}" id="voeFooterNote">
+      ${isGwc ? `${ICONS.warning}<span>Asegúrate de que los datos y pasajeros se hayan tomado correctamente</span>` : `${ICONS.info}<span>Modo Manual · Verifica los valores antes de cotizar</span>`}
     </div>
 
     <div class="voe-resize-handle" title="Arrastra para redimensionar"></div>
@@ -739,17 +753,17 @@ function updateCalculatorUI(targetEl = popup) {
     if (config.itauActive && d.itauDiscount > 0) {
       itauTag.textContent = `- USD ${money(d.itauDiscount)}`;
       itauTag.className = 'voe-itau-box-badge active';
-      itauStatus.textContent = `✓ Descuento de USD ${money(d.itauDiscount)} aplicado (-$${(d.miles * d.mileValue).toFixed(2)})`;
+      itauStatus.innerHTML = `${ICONS.check}<span>Descuento de USD ${money(d.itauDiscount)} aplicado (-$${(d.miles * d.mileValue).toFixed(2)})</span>`;
       itauStatus.className = 'voe-itau-msg ok';
     } else if (config.itauActive && d.miles > 0 && d.miles < d.minMiles) {
       itauTag.textContent = `Mín. ${d.minMiles.toLocaleString('es-UY')}`;
       itauTag.className = 'voe-itau-box-badge';
-      itauStatus.textContent = `⚠️ Requiere mínimo ${d.minMiles.toLocaleString('es-UY')} millas (ingresadas: ${d.miles.toLocaleString('es-UY')})`;
+      itauStatus.innerHTML = `${ICONS.warning}<span>Requiere mínimo ${d.minMiles.toLocaleString('es-UY')} millas (ingresadas: ${d.miles.toLocaleString('es-UY')})</span>`;
       itauStatus.className = 'voe-itau-msg warning';
     } else {
       itauTag.textContent = 'Sin canje';
       itauTag.className = 'voe-itau-box-badge';
-      itauStatus.textContent = `Mínimo ${d.minMiles.toLocaleString('es-UY')} millas · USD ${d.mileValue}/milla`;
+      itauStatus.innerHTML = `${ICONS.info}<span>Mínimo ${d.minMiles.toLocaleString('es-UY')} millas · USD ${d.mileValue}/milla</span>`;
       itauStatus.className = 'voe-itau-msg';
     }
   }
@@ -796,7 +810,7 @@ function copyQuotation() {
   const paxCount = config.passengers || 1;
 
   const modeText = currentMode === 'gwc' ? ' [GWC]' : ' [Manual]';
-  let text = `✈️ Cotización de Vuelo${modeText}: USD ${money(totalToPay)}`;
+  let text = `Cotización de Vuelo${modeText}: USD ${money(totalToPay)}`;
 
   if (paxCount > 1) {
     text += ` Total (USD ${money(paxToPay)} / pax para ${paxCount} pasajeros)`;
