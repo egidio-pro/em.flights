@@ -575,14 +575,29 @@
   font-weight: 700 !important;
   background: rgba(255, 255, 255, 0.22) !important;
   color: #FFFFFF !important;
-  padding: 1.5px 6px !important;
+  padding: 2px 7px !important;
   border-radius: 7px !important;
   letter-spacing: 0.2px !important;
   text-transform: uppercase !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+.voe-pax-badge:hover {
+  background: rgba(255, 255, 255, 0.35) !important;
+  transform: scale(1.04) !important;
+}
+.voe-pax-badge:active {
+  transform: scale(0.96) !important;
+  background: rgba(255, 255, 255, 0.45) !important;
 }
 .voe-pax-badge.green {
   background: rgba(20, 83, 45, 0.1) !important;
   color: var(--voe-green-dark) !important;
+  cursor: default !important;
+  transform: none !important;
 }
 
 /* Tarjeta Azul: TOTAL A COBRAR (Destaque Principal Fintech) */
@@ -596,12 +611,7 @@
   flex-direction: column !important;
   gap: 1px !important;
   box-shadow: 0 6px 18px -2px rgba(29, 78, 216, 0.28) !important;
-  cursor: pointer !important;
-  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
-}
-.voe-banner-blue:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 8px 22px -2px rgba(29, 78, 216, 0.38) !important;
+  cursor: default !important;
 }
 
 .voe-banner-blue-title {
@@ -616,6 +626,22 @@
   font-weight: 900 !important;
   letter-spacing: -0.4px !important;
   line-height: 1.15 !important;
+  cursor: pointer !important;
+  display: inline-block !important;
+  width: fit-content !important;
+  border-radius: 6px !important;
+  padding: 1px 4px !important;
+  margin-left: -4px !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+}
+.voe-banner-blue-val:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+  transform: scale(1.02) !important;
+}
+.voe-banner-blue-val:active {
+  transform: scale(0.97) !important;
+  background: rgba(255, 255, 255, 0.22) !important;
 }
 .voe-banner-subline {
   font-size: 9.5px !important;

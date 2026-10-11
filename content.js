@@ -547,12 +547,12 @@ function renderCalculatorDOM(initialNet, mode) {
     </div>
 
     <!-- Fila 5: Tarjeta Azul (TOTAL A COBRAR - Destaque Principal) -->
-    <div class="voe-banner-blue" id="voeFinalBanner" title="Clic para copiar cotización">
+    <div class="voe-banner-blue" id="voeFinalBanner">
       <div class="voe-banner-header">
         <span class="voe-banner-blue-title" id="voeFinalTitle">TOTAL A COBRAR</span>
-        <span class="voe-pax-badge" id="voeFinalPaxLabel" style="display: none;">USD 0 / pax</span>
+        <span class="voe-pax-badge" id="voeFinalPaxLabel" style="display: none;" title="Clic para copiar precio por pasajero">USD 0 / pax</span>
       </div>
-      <div class="voe-banner-blue-val" id="voeFinalLabel">USD 0</div>
+      <div class="voe-banner-blue-val" id="voeFinalLabel" title="Clic para copiar precio total">USD 0</div>
       <div class="voe-banner-subline" id="voeBannerSubline" style="display: none;"></div>
       <div class="voe-copied-hint" id="voeCopyHint" style="display: none;">${ICONS.check}<span>¡COPIADO AL PORTAPAPELES!</span></div>
     </div>
@@ -689,10 +689,23 @@ function renderCalculatorDOM(initialNet, mode) {
     });
   });
 
-  // Copiar cotización al hacer clic en la tarjeta azul
-  div.querySelector('#voeFinalBanner').addEventListener('click', () => {
-    copyQuotation();
-  });
+  // Copiar solo al hacer clic en el precio total
+  const finalValEl = div.querySelector('#voeFinalLabel');
+  if (finalValEl) {
+    finalValEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      copyTotalPrice();
+    });
+  }
+
+  // Copiar solo al hacer clic en el precio por pasajero
+  const finalPaxEl = div.querySelector('#voeFinalPaxLabel');
+  if (finalPaxEl) {
+    finalPaxEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      copyPaxPrice();
+    });
+  }
 
   updateCalculatorUI(div);
   return div;
@@ -801,35 +814,37 @@ function updateCalculatorUI(targetEl = popup) {
   if (profitLabel) profitLabel.textContent = `USD ${money(d.profit)}`;
 }
 
-function copyQuotation() {
+function copyTotalPrice() {
   const d = calc(currentNet);
   if (!d) return;
 
   const totalToPay = config.itauActive && d.itauDiscount > 0 ? d.finalToPay : d.final;
+  const text = `Total USD ${money(totalToPay)}`;
+
+  copyTextToClipboard(text, `¡Copiado: ${text}!`);
+}
+
+function copyPaxPrice() {
+  const d = calc(currentNet);
+  if (!d) return;
+
   const paxToPay = config.itauActive && d.itauDiscount > 0 ? d.finalToPayPax : d.finalPax;
-  const paxCount = config.passengers || 1;
+  const text = `USD ${money(paxToPay)} por pasajero`;
 
-  const modeText = currentMode === 'gwc' ? ' [GWC]' : ' [Manual]';
-  let text = `Cotización de Vuelo${modeText}: USD ${money(totalToPay)}`;
+  copyTextToClipboard(text, `¡Copiado: ${text}!`);
+}
 
-  if (paxCount > 1) {
-    text += ` Total (USD ${money(paxToPay)} / pax para ${paxCount} pasajeros)`;
-  } else {
-    text += ` (1 pasajero)`;
-  }
-
-  if (config.itauActive && d.itauDiscount > 0) {
-    text += ` [Incluye descuento Itaú Volar: -USD ${money(d.itauDiscount)} por ${d.miles.toLocaleString('es-UY')} millas | Tarifa base: USD ${money(d.final)}]`;
-  }
-
+function copyTextToClipboard(text, feedbackMsg) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(showCopiedFeedback).catch(() => fallbackCopy(text));
+    navigator.clipboard.writeText(text)
+      .then(() => showCopiedFeedback(feedbackMsg))
+      .catch(() => fallbackCopy(text, feedbackMsg));
   } else {
-    fallbackCopy(text);
+    fallbackCopy(text, feedbackMsg);
   }
 }
 
-function fallbackCopy(text) {
+function fallbackCopy(text, feedbackMsg) {
   const ta = document.createElement('textarea');
   ta.value = text;
   ta.style.position = 'fixed';
@@ -838,16 +853,19 @@ function fallbackCopy(text) {
   ta.select();
   try {
     document.execCommand('copy');
-    showCopiedFeedback();
+    showCopiedFeedback(feedbackMsg);
   } catch (err) {}
   document.body.removeChild(ta);
 }
 
-function showCopiedFeedback() {
+let copyHintTimer = null;
+function showCopiedFeedback(msg = '¡COPIADO AL PORTAPAPELES!') {
   const hint = popup?.querySelector('#voeCopyHint');
   if (hint) {
-    hint.style.display = 'block';
-    setTimeout(() => {
+    hint.innerHTML = `${ICONS.check}<span>${msg}</span>`;
+    hint.style.display = 'inline-flex';
+    clearTimeout(copyHintTimer);
+    copyHintTimer = setTimeout(() => {
       if (hint) hint.style.display = 'none';
     }, 1800);
   }
