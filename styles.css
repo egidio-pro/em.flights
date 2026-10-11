@@ -24,16 +24,16 @@
 .voe-popup {
   position: fixed !important;
   z-index: 2147483647 !important;
-  width: 330px !important;
+  width: 320px !important;
   background: #FFFFFF !important;
   border: 1.5px solid var(--voe-card-border) !important;
-  border-radius: 24px !important;
-  box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.16), 0 8px 16px -4px rgba(0, 0, 0, 0.06) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.16), 0 6px 12px -4px rgba(0, 0, 0, 0.06) !important;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif !important;
   transform: scale(var(--voe-scale, 1)) !important;
   transform-origin: center center !important;
   overflow: hidden !important;
-  padding: 18px !important;
+  padding: 13px 14px 10px !important;
   box-sizing: border-box !important;
   user-select: none !important;
   animation: voeZoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -49,7 +49,7 @@
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  margin-bottom: 14px !important;
+  margin-bottom: 8px !important;
   cursor: grab !important;
 }
 .voe-header:active { cursor: grabbing !important; }
@@ -57,14 +57,14 @@
 .voe-brand {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
 }
 .voe-brand-icon {
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 9px !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 7px !important;
   display: block !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12) !important;
 }
 
 .voe-brand-info {
@@ -73,7 +73,7 @@
   gap: 6px !important;
 }
 .voe-brand-name {
-  font-size: 17px !important;
+  font-size: 15px !important;
   font-weight: 700 !important;
   color: #64748B !important;
   letter-spacing: -0.3px !important;
@@ -81,10 +81,10 @@
 
 /* Badges de Modo (GWC vs Manual) */
 .voe-badge-pill {
-  font-size: 9.5px !important;
+  font-size: 9px !important;
   font-weight: 800 !important;
-  padding: 2px 7px !important;
-  border-radius: 10px !important;
+  padding: 2px 6px !important;
+  border-radius: 8px !important;
   letter-spacing: 0.3px !important;
   text-transform: uppercase !important;
   display: inline-flex !important;
@@ -103,14 +103,14 @@
 
 /* Botón de Cerrar (Círculo tenue) */
 .voe-close {
-  width: 30px !important;
-  height: 30px !important;
+  width: 26px !important;
+  height: 26px !important;
   background: #F1F5F9 !important;
   border: none !important;
   border-radius: 50% !important;
   cursor: pointer !important;
   color: #64748B !important;
-  font-size: 14px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
   display: flex !important;
   align-items: center !important;
@@ -126,30 +126,30 @@
 .voe-grid-row {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
-  gap: 12px !important;
-  margin-bottom: 12px !important;
+  gap: 8px !important;
+  margin-bottom: 7px !important;
 }
 
 .voe-mini-card {
   background: #FFFFFF !important;
   border: 1.5px solid var(--voe-card-border) !important;
-  border-radius: 16px !important;
-  padding: 12px 10px !important;
+  border-radius: 13px !important;
+  padding: 7px 6px !important;
   text-align: center !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 6px !important;
+  gap: 3px !important;
   box-sizing: border-box !important;
 }
 
 .voe-mini-label {
-  font-size: 11px !important;
+  font-size: 10px !important;
   font-weight: 800 !important;
   color: var(--voe-text-gray) !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
+  letter-spacing: 0.4px !important;
 }
 
 /* Valor Neto editable */
@@ -157,20 +157,20 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 4px !important;
+  gap: 3px !important;
 }
 .voe-net-curr {
-  font-size: 20px !important;
+  font-size: 16px !important;
   font-weight: 900 !important;
   color: var(--voe-blue-dark) !important;
 }
 .voe-net-input {
-  font-size: 22px !important;
+  font-size: 17px !important;
   font-weight: 900 !important;
   color: var(--voe-blue-dark) !important;
   border: none !important;
   background: transparent !important;
-  width: 78px !important;
+  width: 72px !important;
   text-align: left !important;
   outline: none !important;
   padding: 0 !important;
@@ -184,16 +184,16 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 8px !important;
+  gap: 6px !important;
 }
 .voe-btn-step {
-  width: 28px !important;
-  height: 28px !important;
+  width: 24px !important;
+  height: 24px !important;
   border-radius: 50% !important;
   background: var(--voe-cyan-soft) !important;
   color: var(--voe-cyan-text) !important;
   border: none !important;
-  font-size: 17px !important;
+  font-size: 15px !important;
   font-weight: 800 !important;
   cursor: pointer !important;
   display: flex !important;
@@ -203,15 +203,15 @@
 }
 .voe-btn-step:hover {
   background: #BAE6FD !important;
-  transform: scale(1.08) !important;
+  transform: scale(1.06) !important;
 }
 .voe-btn-step:active {
   transform: scale(0.92) !important;
 }
 
 .voe-step-val-input {
-  width: 38px !important;
-  font-size: 17px !important;
+  width: 34px !important;
+  font-size: 15px !important;
   font-weight: 800 !important;
   color: var(--voe-text-dark) !important;
   text-align: center !important;
@@ -229,47 +229,53 @@
   margin: 0 !important;
 }
 
-/* Barra Segmentada TOTAL / POR PAX */
+/* Conmutador Activación Millas Itaú */
 .voe-switcher {
   display: flex !important;
   background: var(--voe-trough) !important;
-  border-radius: 18px !important;
-  padding: 3px !important;
-  margin-bottom: 12px !important;
+  border-radius: 12px !important;
+  padding: 2px !important;
+  margin-bottom: 7px !important;
 }
 .voe-switch-btn {
   flex: 1 !important;
   border: none !important;
   background: transparent !important;
-  padding: 8px 12px !important;
-  font-size: 12px !important;
+  padding: 5px 8px !important;
+  font-size: 10.5px !important;
   font-weight: 700 !important;
   cursor: pointer !important;
-  border-radius: 15px !important;
+  border-radius: 10px !important;
   color: #64748B !important;
   text-align: center !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
+  letter-spacing: 0.4px !important;
   transition: all 0.15s ease !important;
 }
 .voe-switch-btn.active {
   background: #FFFFFF !important;
   color: var(--voe-blue-dark) !important;
   font-weight: 800 !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 1.5px 5px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Tarjeta de Millas Itaú Volar en la Calculadora Flotante */
+/* Tarjeta de Millas Itaú Volar (Compacta) */
 .voe-itau-box {
   background: #FFFFFF !important;
   border: 1.5px solid var(--voe-card-border) !important;
-  border-radius: 16px !important;
-  padding: 10px 12px !important;
-  margin-bottom: 12px !important;
+  border-radius: 13px !important;
+  padding: 7px 10px !important;
+  margin-bottom: 7px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  gap: 5px !important;
   box-sizing: border-box !important;
+  animation: voeFadeIn 0.15s ease !important;
+}
+
+@keyframes voeFadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .voe-itau-box-header {
@@ -279,21 +285,21 @@
 }
 
 .voe-itau-box-title {
-  font-size: 11px !important;
+  font-size: 10px !important;
   font-weight: 800 !important;
   color: #EA580C !important;
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  letter-spacing: 0.4px !important;
+  gap: 3px !important;
+  letter-spacing: 0.3px !important;
   text-transform: uppercase !important;
 }
 
 .voe-itau-box-badge {
-  font-size: 10px !important;
+  font-size: 9.5px !important;
   font-weight: 800 !important;
-  padding: 2px 8px !important;
-  border-radius: 8px !important;
+  padding: 1.5px 6px !important;
+  border-radius: 7px !important;
   background: #FFF7ED !important;
   color: #EA580C !important;
   border: 1px solid rgba(234, 88, 12, 0.2) !important;
@@ -309,32 +315,32 @@
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 6px !important;
+  gap: 4px !important;
 }
 
 .voe-itau-stepper {
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 3px !important;
   background: #FFF7ED !important;
-  border-radius: 20px !important;
-  padding: 2px 4px !important;
+  border-radius: 16px !important;
+  padding: 2px 3px !important;
 }
 
 .voe-btn-itau-step {
-  width: 24px !important;
-  height: 24px !important;
+  width: 20px !important;
+  height: 20px !important;
   border-radius: 50% !important;
   border: none !important;
   background: #FFFFFF !important;
   color: #EA580C !important;
-  font-size: 15px !important;
+  font-size: 13px !important;
   font-weight: 800 !important;
   cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06) !important;
   transition: all 0.15s ease !important;
 }
 .voe-btn-itau-step:hover {
@@ -343,8 +349,8 @@
 }
 
 .voe-itau-miles-input {
-  width: 60px !important;
-  font-size: 13px !important;
+  width: 52px !important;
+  font-size: 12px !important;
   font-weight: 800 !important;
   color: #9A3412 !important;
   text-align: center !important;
@@ -361,16 +367,16 @@
 .voe-itau-quick-chips {
   display: flex !important;
   align-items: center !important;
-  gap: 3px !important;
+  gap: 2px !important;
 }
 
 .voe-itau-chip {
-  padding: 4px 6px !important;
-  border-radius: 7px !important;
+  padding: 3px 5px !important;
+  border-radius: 6px !important;
   border: 1px solid var(--voe-card-border) !important;
   background: #F8FAFC !important;
   color: #475569 !important;
-  font-size: 9.5px !important;
+  font-size: 9px !important;
   font-weight: 800 !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
@@ -387,7 +393,7 @@
 }
 
 .voe-itau-msg {
-  font-size: 9.5px !important;
+  font-size: 9px !important;
   font-weight: 700 !important;
   color: var(--voe-text-muted) !important;
   text-align: center !important;
@@ -399,79 +405,105 @@
   color: #059669 !important;
 }
 
+/* Header de Tarjetas de Precio / Ganancia */
+.voe-banner-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 1px !important;
+}
+
+.voe-pax-badge {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: #FFFFFF !important;
+  padding: 1.5px 6px !important;
+  border-radius: 7px !important;
+  letter-spacing: 0.2px !important;
+  text-transform: uppercase !important;
+}
+.voe-pax-badge.green {
+  background: rgba(18, 92, 57, 0.12) !important;
+  color: var(--voe-green-dark) !important;
+}
+
 /* Tarjeta Azul: PRECIO FINAL AL CLIENTE */
 .voe-banner-blue {
   background: var(--voe-blue-primary) !important;
-  border-radius: 16px !important;
-  padding: 14px 18px !important;
+  border-radius: 14px !important;
+  padding: 10px 14px !important;
   color: #FFFFFF !important;
-  margin-bottom: 12px !important;
+  margin-bottom: 7px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 2px !important;
-  box-shadow: 0 6px 16px rgba(23, 101, 193, 0.22) !important;
+  gap: 1px !important;
+  box-shadow: 0 4px 14px rgba(23, 101, 193, 0.2) !important;
   cursor: pointer !important;
   transition: transform 0.15s ease, box-shadow 0.15s ease !important;
 }
 .voe-banner-blue:hover {
   transform: translateY(-1px) !important;
-  box-shadow: 0 8px 20px rgba(23, 101, 193, 0.3) !important;
+  box-shadow: 0 6px 18px rgba(23, 101, 193, 0.28) !important;
 }
 
 .voe-banner-blue-title {
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  opacity: 0.88 !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  opacity: 0.9 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
+  letter-spacing: 0.4px !important;
 }
 .voe-banner-blue-val {
-  font-size: 27px !important;
+  font-size: 24px !important;
   font-weight: 900 !important;
-  letter-spacing: -0.5px !important;
+  letter-spacing: -0.4px !important;
+  line-height: 1.15 !important;
 }
 .voe-banner-subline {
-  font-size: 10px !important;
+  font-size: 9.5px !important;
   font-weight: 700 !important;
-  opacity: 0.9 !important;
-  margin-top: 3px !important;
+  opacity: 0.92 !important;
+  margin-top: 2px !important;
   letter-spacing: 0.2px !important;
 }
 
 /* Tarjeta Verde: GANANCIA NETA */
 .voe-banner-green {
   background: var(--voe-green-mint) !important;
-  border-radius: 16px !important;
-  padding: 14px 18px !important;
+  border-radius: 14px !important;
+  padding: 8px 14px !important;
   color: var(--voe-green-dark) !important;
-  margin-bottom: 14px !important;
+  margin-bottom: 7px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 2px !important;
-  box-shadow: 0 4px 14px rgba(132, 225, 179, 0.3) !important;
+  gap: 1px !important;
+  box-shadow: 0 3px 12px rgba(132, 225, 179, 0.26) !important;
 }
 .voe-banner-green-title {
-  font-size: 11px !important;
-  font-weight: 700 !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
   color: var(--voe-green-sub) !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
+  letter-spacing: 0.4px !important;
 }
 .voe-banner-green-val {
-  font-size: 27px !important;
+  font-size: 21px !important;
   font-weight: 900 !important;
-  letter-spacing: -0.5px !important;
+  letter-spacing: -0.4px !important;
   color: var(--voe-green-dark) !important;
+  line-height: 1.15 !important;
 }
 
 /* Pie de página con versión */
 .voe-footer-note {
-  font-size: 10px !important;
+  font-size: 9px !important;
   font-weight: 700 !important;
   text-align: center !important;
   color: var(--voe-text-muted) !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.6px !important;
+  letter-spacing: 0.5px !important;
+  margin-top: 2px !important;
 }
 
 /* Resize Handle */

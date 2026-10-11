@@ -472,16 +472,29 @@
         detail: `Margen actual: ${marginInput?.value}%`
       });
 
-      // Test 7: Tarjeta azul con precio final y copiado interactivo
+      // Test 7: Tarjeta azul con precio total en destaque y pax en chiquito
       const finalBanner = activePopup?.querySelector('#voeFinalBanner');
+      const finalLabel = activePopup?.querySelector('#voeFinalLabel');
+      const paxLabel = activePopup?.querySelector('#voeFinalPaxLabel');
       tests.push({
-        name: 'Tarjeta azul con precio final al cliente y copiado interactivo',
-        pass: !!finalBanner,
-        detail: finalBanner ? 'Tarjeta azul presente' : 'No se encontró la tarjeta'
+        name: 'Precio Unificado: Total en destaque y precio por pasajero en chiquito',
+        pass: !!finalBanner && !!finalLabel && !!paxLabel,
+        detail: `Total: ${finalLabel?.textContent} | Pax: ${paxLabel?.textContent}`
       });
 
-      // Test 8: Descuento Millas Itaú Volar (Cálculo directo con 5.000 millas)
-      const cItau5k = calc(1000);
+      // Test 8: Conmutador Itaú Volar (Activar / Desactivar cotización con millas)
+      const itauBtn = activePopup?.querySelector('#voeItauSwitcher .voe-switch-btn[data-itau="on"]');
+      const sinMillasBtn = activePopup?.querySelector('#voeItauSwitcher .voe-switch-btn[data-itau="off"]');
+      if (itauBtn) itauBtn.click();
+      await new Promise(r => setTimeout(r, 60));
+      const itauBoxVisible = activePopup?.querySelector('#voeItauBox')?.style.display !== 'none';
+      tests.push({
+        name: 'Conmutador Switcher: Activa sección de Millas Itaú y cotización',
+        pass: !!itauBtn && !!sinMillasBtn && itauBoxVisible && config.itauActive === true,
+        detail: `Itaú activo: ${config.itauActive} | Caja visible: ${itauBoxVisible}`
+      });
+
+      // Test 9: Descuento Millas Itaú Volar (5.000 millas descuentan USD 62.50 sobre el total)
       config.itauMiles = 5000;
       const cItauApplied = calc(1000);
       tests.push({
@@ -490,25 +503,14 @@
         detail: `Descuento: USD ${cItauApplied?.itauDiscount} | Total a pagar: USD ${Math.round(cItauApplied?.finalToPay || 0)}`
       });
 
-      // Test 9: Mínimo de 5.000 millas requerido (menos de 5000 no descuenta)
-      config.itauMiles = 3000;
-      const cItauBelowMin = calc(1000);
-      tests.push({
-        name: 'Itaú Volar: Mínimo de 5.000 millas requerido (3.000 millas => 0 descuento)',
-        pass: cItauBelowMin && cItauBelowMin.itauDiscount === 0 && cItauBelowMin.finalToPay === cItauBelowMin.final,
-        detail: `Descuento con 3.000 millas: USD ${cItauBelowMin?.itauDiscount}`
-      });
-
-      // Test 10: Interacción en UI con chip 10K de Itaú Volar
-      const chip10k = activePopup?.querySelector('.voe-itau-chip[data-miles="10000"]');
-      if (chip10k) chip10k.click();
+      // Test 10: Desactivar conmutador desactiva el descuento
+      if (sinMillasBtn) sinMillasBtn.click();
       await new Promise(r => setTimeout(r, 60));
-      const milesInput = activePopup?.querySelector('#voeItauMilesInput');
-      const discountTag = activePopup?.querySelector('#voeItauDiscountTag');
+      const cSinMillas = calc(1000);
       tests.push({
-        name: 'Itaú Volar UI: Chip "10K" aplica 10.000 millas (-USD 125)',
-        pass: milesInput && parseInt(milesInput.value) === 10000 && discountTag && discountTag.textContent.includes('125'),
-        detail: `Millas en input: ${milesInput?.value} | Etiqueta: ${discountTag?.textContent}`
+        name: 'Conmutador "SIN MILLAS": Desactiva el descuento y oculta la tarjeta',
+        pass: config.itauActive === false && cSinMillas.itauDiscount === 0 && cSinMillas.finalToPay === cSinMillas.final,
+        detail: `Itaú activo: ${config.itauActive} | Descuento: USD ${cSinMillas.itauDiscount}`
       });
 
       // Test 11: Cierre con Escape

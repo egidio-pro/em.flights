@@ -5,9 +5,9 @@
 
 'use strict';
 
-const POPUP_W = 330;
-const POPUP_H_EST = 460;
-const PAD = 14;
+const POPUP_W = 320;
+const POPUP_H_EST = 360;
+const PAD = 12;
 
 let config = {
   passengers: 1,
@@ -17,7 +17,8 @@ let config = {
   displayMode: 'total',
   itauMileValue: 0.0125,
   itauMinMiles: 5000,
-  itauMiles: 0
+  itauMiles: 0,
+  itauActive: false
 };
 
 let popup = null;
@@ -36,7 +37,9 @@ async function init() {
       enabled: true,
       displayMode: 'total',
       itauMileValue: 0.0125,
-      itauMinMiles: 5000
+      itauMinMiles: 5000,
+      itauMiles: 0,
+      itauActive: false
     });
     config = { ...config, ...st };
 
@@ -214,13 +217,7 @@ function renderCalculatorDOM(initialNet, mode) {
       </div>
     </div>
 
-    <!-- Fila 2: TOTAL / POR PAX -->
-    <div class="voe-switcher">
-      <button class="voe-switch-btn ${config.displayMode === 'total' ? 'active' : ''}" data-mode="total">TOTAL</button>
-      <button class="voe-switch-btn ${config.displayMode === 'pax' ? 'active' : ''}" data-mode="pax">POR PAX</button>
-    </div>
-
-    <!-- Fila 3: Margen (%) / Bok (%) -->
+    <!-- Fila 2: Margen (%) / Bok (%) -->
     <div class="voe-grid-row">
       <div class="voe-mini-card">
         <span class="voe-mini-label">MARGEN (%)</span>
@@ -243,8 +240,14 @@ function renderCalculatorDOM(initialNet, mode) {
       </div>
     </div>
 
-    <!-- Fila 4: Tarjeta de Millas Itaú Volar -->
-    <div class="voe-itau-box">
+    <!-- Fila 3: Switcher Activar / Desactivar Cotización con Millas Itaú -->
+    <div class="voe-switcher" id="voeItauSwitcher">
+      <button class="voe-switch-btn ${!config.itauActive ? 'active' : ''}" data-itau="off">SIN MILLAS</button>
+      <button class="voe-switch-btn ${config.itauActive ? 'active' : ''}" data-itau="on">💳 MILLAS ITAÚ</button>
+    </div>
+
+    <!-- Fila 4: Tarjeta de Millas Itaú Volar (Desplegable) -->
+    <div class="voe-itau-box" id="voeItauBox" style="display: ${config.itauActive ? 'flex' : 'none'};">
       <div class="voe-itau-box-header">
         <span class="voe-itau-box-title">💳 Millas Itaú Volar</span>
         <span class="voe-itau-box-badge" id="voeItauDiscountTag">Sin canje</span>
@@ -269,20 +272,22 @@ function renderCalculatorDOM(initialNet, mode) {
       </div>
     </div>
 
-    <!-- Fila 5: Tarjeta Azul (Precio final al cliente / Total a pagar con millas) -->
+    <!-- Fila 5: Tarjeta Azul (Precio Final - Total en destaque y pax en chiquito) -->
     <div class="voe-banner-blue" id="voeFinalBanner" title="Clic para copiar cotización">
-      <div class="voe-banner-blue-title" id="voeFinalTitle">
-        PRECIO FINAL AL CLIENTE <span id="voeModeLabel">(${config.displayMode === 'total' ? 'Total' : 'Pax'})</span>
+      <div class="voe-banner-header">
+        <span class="voe-banner-blue-title" id="voeFinalTitle">TOTAL A COBRAR</span>
+        <span class="voe-pax-badge" id="voeFinalPaxLabel">USD 0 / pax</span>
       </div>
       <div class="voe-banner-blue-val" id="voeFinalLabel">USD 0</div>
       <div class="voe-banner-subline" id="voeBannerSubline" style="display: none;"></div>
       <div class="voe-copied-hint" id="voeCopyHint" style="display: none;">✓ ¡COPIADO AL PORTAPAPELES!</div>
     </div>
 
-    <!-- Fila 6: Tarjeta Verde (Ganancia neta) -->
+    <!-- Fila 6: Tarjeta Verde (Ganancia Neta - Total en destaque y pax en chiquito) -->
     <div class="voe-banner-green">
-      <div class="voe-banner-green-title">
-        GANANCIA NETA <span id="voeProfitModeLabel">(${config.displayMode === 'total' ? 'Total' : 'Pax'})</span>
+      <div class="voe-banner-header">
+        <span class="voe-banner-green-title">GANANCIA NETA</span>
+        <span class="voe-pax-badge green" id="voeProfitPaxLabel">USD 0 / pax</span>
       </div>
       <div class="voe-banner-green-val" id="voeProfitLabel">USD 0</div>
     </div>
@@ -342,6 +347,21 @@ function renderCalculatorDOM(initialNet, mode) {
     updateCalculatorUI();
   });
 
+  // Conmutador SIN MILLAS / MILLAS ITAÚ
+  div.querySelectorAll('#voeItauSwitcher .voe-switch-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const isItau = btn.dataset.itau === 'on';
+      config.itauActive = isItau;
+      if (isItau && (!config.itauMiles || config.itauMiles === 0)) {
+        config.itauMiles = config.itauMinMiles || 5000;
+        const itauInput = div.querySelector('#voeItauMilesInput');
+        if (itauInput) itauInput.value = config.itauMiles;
+      }
+      persistConfig();
+      updateCalculatorUI();
+    });
+  });
+
   // Controles de Millas Itaú Volar
   const itauMilesInput = div.querySelector('#voeItauMilesInput');
   const itauMinusBtn = div.querySelector('#voeItauMinus');
@@ -349,18 +369,21 @@ function renderCalculatorDOM(initialNet, mode) {
 
   itauMilesInput.addEventListener('input', (e) => {
     config.itauMiles = Math.max(0, parseInt(e.target.value) || 0);
+    persistConfig();
     updateCalculatorUI();
   });
 
   itauMinusBtn.addEventListener('click', () => {
     config.itauMiles = Math.max(0, (config.itauMiles || 0) - 1000);
     itauMilesInput.value = config.itauMiles;
+    persistConfig();
     updateCalculatorUI();
   });
 
   itauPlusBtn.addEventListener('click', () => {
     config.itauMiles = (config.itauMiles || 0) + 1000;
     itauMilesInput.value = config.itauMiles;
+    persistConfig();
     updateCalculatorUI();
   });
 
@@ -368,15 +391,6 @@ function renderCalculatorDOM(initialNet, mode) {
     chip.addEventListener('click', () => {
       config.itauMiles = parseInt(chip.dataset.miles) || 0;
       itauMilesInput.value = config.itauMiles;
-      updateCalculatorUI();
-    });
-  });
-
-  // Conmutador TOTAL / POR PAX
-  div.querySelectorAll('.voe-switch-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      config.displayMode = btn.dataset.mode;
-      div.querySelectorAll('.voe-switch-btn').forEach(b => b.classList.toggle('active', b === btn));
       persistConfig();
       updateCalculatorUI();
     });
@@ -397,20 +411,31 @@ function updateCalculatorUI(targetEl = popup) {
 
   const finalTitle = targetEl.querySelector('#voeFinalTitle');
   const finalLabel = targetEl.querySelector('#voeFinalLabel');
+  const finalPaxLabel = targetEl.querySelector('#voeFinalPaxLabel');
   const bannerSubline = targetEl.querySelector('#voeBannerSubline');
   const profitLabel = targetEl.querySelector('#voeProfitLabel');
-  const modeLabel = targetEl.querySelector('#voeModeLabel');
-  const profitModeLabel = targetEl.querySelector('#voeProfitModeLabel');
+  const profitPaxLabel = targetEl.querySelector('#voeProfitPaxLabel');
 
+  const itauBox = targetEl.querySelector('#voeItauBox');
   const itauTag = targetEl.querySelector('#voeItauDiscountTag');
   const itauStatus = targetEl.querySelector('#voeItauStatus');
   const itauChips = targetEl.querySelectorAll('.voe-itau-chip');
+  const itauMilesInput = targetEl.querySelector('#voeItauMilesInput');
 
-  const isTotal = config.displayMode === 'total';
-  const modeText = `(${isTotal ? 'Total' : 'Pax'})`;
+  // Controlar visibilidad del contenedor de millas según switcher
+  if (itauBox) {
+    itauBox.style.display = config.itauActive ? 'flex' : 'none';
+  }
 
-  if (modeLabel) modeLabel.textContent = modeText;
-  if (profitModeLabel) profitModeLabel.textContent = modeText;
+  // Actualizar botones del switcher de millas
+  targetEl.querySelectorAll('#voeItauSwitcher .voe-switch-btn').forEach(btn => {
+    const isItau = btn.dataset.itau === 'on';
+    btn.classList.toggle('active', config.itauActive ? isItau : !isItau);
+  });
+
+  if (itauMilesInput && document.activeElement !== itauMilesInput) {
+    itauMilesInput.value = config.itauMiles || 0;
+  }
 
   // Actualizar chips activos de millas
   if (itauChips) {
@@ -421,78 +446,84 @@ function updateCalculatorUI(targetEl = popup) {
 
   if (!d) {
     if (finalLabel) finalLabel.textContent = 'Error: % ≥ 100';
+    if (finalPaxLabel) finalPaxLabel.textContent = '—';
     if (profitLabel) profitLabel.textContent = '—';
+    if (profitPaxLabel) profitPaxLabel.textContent = '—';
     return;
   }
 
   // Estado del Descuento Itaú Volar
   if (itauTag && itauStatus) {
-    if (d.itauDiscount > 0) {
+    if (config.itauActive && d.itauDiscount > 0) {
       itauTag.textContent = `- USD ${money(d.itauDiscount)}`;
       itauTag.className = 'voe-itau-box-badge active';
       itauStatus.textContent = `✓ Descuento de USD ${money(d.itauDiscount)} aplicado (-$${(d.miles * d.mileValue).toFixed(2)})`;
       itauStatus.className = 'voe-itau-msg ok';
-    } else if (d.miles > 0 && d.miles < d.minMiles) {
-      itauTag.textContent = 'Mín. 5.000';
+    } else if (config.itauActive && d.miles > 0 && d.miles < d.minMiles) {
+      itauTag.textContent = `Mín. ${d.minMiles.toLocaleString('es-UY')}`;
       itauTag.className = 'voe-itau-box-badge';
       itauStatus.textContent = `⚠️ Requiere mínimo ${d.minMiles.toLocaleString('es-UY')} millas (ingresadas: ${d.miles.toLocaleString('es-UY')})`;
       itauStatus.className = 'voe-itau-msg warning';
     } else {
       itauTag.textContent = 'Sin canje';
       itauTag.className = 'voe-itau-box-badge';
-      itauStatus.textContent = `Mínimo ${d.minMiles.toLocaleString('es-UY')} millas · Valor: USD ${d.mileValue}/milla`;
+      itauStatus.textContent = `Mínimo ${d.minMiles.toLocaleString('es-UY')} millas · USD ${d.mileValue}/milla`;
       itauStatus.className = 'voe-itau-msg';
     }
   }
 
-  // Valores de Precio Final y Desglose
-  const showFinal = isTotal ? d.final : d.finalPax;
-  const showFinalToPay = isTotal ? d.finalToPay : d.finalToPayPax;
-  const showProfit = isTotal ? d.profit : d.profitPax;
+  // Formato para mostrar: PRECIO TOTAL EN DESTAQUE Y PRECIO POR PASAJERO EN CHIQUITO
+  const paxCount = config.passengers || 1;
+  const paxSuffix = paxCount > 1 ? ` (${paxCount} pax)` : '';
 
-  if (d.itauDiscount > 0) {
-    if (finalTitle) {
-      finalTitle.innerHTML = `TOTAL A COBRAR (CON MILLAS) <span id="voeModeLabel">${modeText}</span>`;
-    }
-    if (finalLabel) {
-      finalLabel.textContent = `USD ${money(showFinalToPay)}`;
-    }
+  const totalToPay = config.itauActive && d.itauDiscount > 0 ? d.finalToPay : d.final;
+  const paxToPay = config.itauActive && d.itauDiscount > 0 ? d.finalToPayPax : d.finalPax;
+
+  if (finalLabel) finalLabel.textContent = `USD ${money(totalToPay)}`;
+  if (finalPaxLabel) {
+    finalPaxLabel.textContent = `USD ${money(paxToPay)} / pax${paxSuffix}`;
+  }
+
+  if (config.itauActive && d.itauDiscount > 0) {
+    if (finalTitle) finalTitle.textContent = 'TOTAL A COBRAR (CON MILLAS)';
     if (bannerSubline) {
       bannerSubline.style.display = 'block';
-      bannerSubline.textContent = `Tarifa base: USD ${money(showFinal)} · Descuento: -USD ${money(d.itauDiscount)} (${d.miles.toLocaleString('es-UY')} millas)`;
+      bannerSubline.textContent = `Tarifa base: USD ${money(d.final)} · Descuento: -USD ${money(d.itauDiscount)} (${d.miles.toLocaleString('es-UY')} mi)`;
     }
   } else {
-    if (finalTitle) {
-      finalTitle.innerHTML = `PRECIO FINAL AL CLIENTE <span id="voeModeLabel">${modeText}</span>`;
-    }
-    if (finalLabel) {
-      finalLabel.textContent = `USD ${money(showFinal)}`;
-    }
+    if (finalTitle) finalTitle.textContent = 'TOTAL A COBRAR';
     if (bannerSubline) {
       bannerSubline.style.display = 'none';
       bannerSubline.textContent = '';
     }
   }
 
-  if (profitLabel) profitLabel.textContent = `USD ${money(showProfit)}`;
+  // GANANCIA NETA EN DESTAQUE Y POR PAX EN CHIQUITO
+  if (profitLabel) profitLabel.textContent = `USD ${money(d.profit)}`;
+  if (profitPaxLabel) {
+    profitPaxLabel.textContent = `USD ${money(d.profitPax)} / pax${paxSuffix}`;
+  }
 }
 
 function copyQuotation() {
   const d = calc(currentNet);
   if (!d) return;
 
-  const isTotal = config.displayMode === 'total';
-  const price = isTotal ? (d.itauDiscount > 0 ? d.finalToPay : d.final) : (d.itauDiscount > 0 ? d.finalToPayPax : d.finalPax);
-  const paxText = config.passengers > 1
-    ? (isTotal ? `Total para ${config.passengers} pasajeros` : `Por pasajero (grupo de ${config.passengers})`)
-    : '1 pasajero';
+  const totalToPay = config.itauActive && d.itauDiscount > 0 ? d.finalToPay : d.final;
+  const paxToPay = config.itauActive && d.itauDiscount > 0 ? d.finalToPayPax : d.finalPax;
+  const paxCount = config.passengers || 1;
 
   const modeText = currentMode === 'gwc' ? ' [GWC]' : ' [Manual]';
-  let text = `✈️ Cotización de Vuelo${modeText}: USD ${money(price)} (${paxText})`;
+  let text = `✈️ Cotización de Vuelo${modeText}: USD ${money(totalToPay)}`;
 
-  if (d.itauDiscount > 0) {
-    const basePrice = isTotal ? d.final : d.finalPax;
-    text += ` [Incluye descuento Itaú Volar: -USD ${money(d.itauDiscount)} por ${d.miles.toLocaleString('es-UY')} millas | Tarifa sin millas: USD ${money(basePrice)}]`;
+  if (paxCount > 1) {
+    text += ` Total (USD ${money(paxToPay)} / pax para ${paxCount} pasajeros)`;
+  } else {
+    text += ` (1 pasajero)`;
+  }
+
+  if (config.itauActive && d.itauDiscount > 0) {
+    text += ` [Incluye descuento Itaú Volar: -USD ${money(d.itauDiscount)} por ${d.miles.toLocaleString('es-UY')} millas | Tarifa base: USD ${money(d.final)}]`;
   }
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -566,6 +597,7 @@ function calc(net) {
       miles: config.itauMiles || 0,
       minMiles: config.itauMinMiles !== undefined ? config.itauMinMiles : 5000,
       mileValue: config.itauMileValue !== undefined ? config.itauMileValue : 0.0125,
+      itauActive: !!config.itauActive,
       itauDiscount: 0,
       finalToPay: 0,
       finalToPayPax: 0
@@ -577,14 +609,13 @@ function calc(net) {
   const final = net / (1 - pct / 100);
   const profit = final - net;
 
-  // Descuento de Millas Itaú Volar
-  // "se descuenta sobre el valor total del pasaje. se requiere un minimo de 5000 millas y cada milla tiene un valor de 0,0125"
+  // Descuento de Millas Itaú Volar (solo si está activo el conmutador)
   let itauDiscount = 0;
   const miles = config.itauMiles || 0;
   const minMiles = config.itauMinMiles !== undefined ? config.itauMinMiles : 5000;
   const mileValue = config.itauMileValue !== undefined ? config.itauMileValue : 0.0125;
 
-  if (miles >= minMiles) {
+  if (config.itauActive && miles >= minMiles) {
     itauDiscount = miles * mileValue;
   }
 
@@ -601,6 +632,7 @@ function calc(net) {
     miles,
     minMiles,
     mileValue,
+    itauActive: !!config.itauActive,
     itauDiscount,
     finalToPay,
     finalToPayPax: finalToPay / config.passengers
@@ -618,7 +650,9 @@ function persistConfig() {
       passengers: config.passengers,
       margin: config.margin,
       bok: config.bok,
-      displayMode: config.displayMode
+      displayMode: config.displayMode,
+      itauActive: config.itauActive,
+      itauMiles: config.itauMiles
     });
   }, 400);
 }
