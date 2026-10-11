@@ -27,19 +27,43 @@ toggleCheck.addEventListener('change', async () => {
   }
 });
 
+// Apertura de la calculadora manual (independiente del dominio)
 openManualCalcBtn.addEventListener('click', async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) {
-    showToast('Abre una pestaña web primero', 'error');
+    showToast('Abre una pestaña primero', 'error');
+    return;
+  }
+
+  // Comprobar si es una página restringida por el sistema de Chrome
+  if (tab.url && (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('about:'))) {
+    showToast('Abre cualquier página web normal', 'error');
     return;
   }
 
   try {
+    // Intento directo de envío de mensaje
     await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_MANUAL_CALC', config: calcConfig });
-    showToast('✓ Calculadora abierta en la página', 'ok');
-    setTimeout(() => window.close(), 500);
+    showToast('✓ Calculadora Manual abierta', 'ok');
+    setTimeout(() => window.close(), 400);
   } catch (err) {
-    showToast('Navega a una web para abrir la calculadora', 'error');
+    // Si el content script no estaba cargado en esta pestaña, inyectar dinámicamente
+    try {
+      await chrome.scripting.insertCSS({ target: { tabId: tab.id }, files: ['styles.css'] });
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
+
+      setTimeout(async () => {
+        try {
+          await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_MANUAL_CALC', config: calcConfig });
+          showToast('✓ Calculadora Manual abierta', 'ok');
+          setTimeout(() => window.close(), 400);
+        } catch (e2) {
+          showToast('Error al conectar con la pestaña', 'error');
+        }
+      }, 150);
+    } catch (injErr) {
+      showToast('Abre una web accesible para usarla', 'error');
+    }
   }
 });
 

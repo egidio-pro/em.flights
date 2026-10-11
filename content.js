@@ -1,5 +1,6 @@
 /* ================================================================
-   EM FLIGHTS – content.js  v2.1.2 (Unified Light Mode Calculator)
+   EM FLIGHTS – content.js  v2.1.2
+   Doble Modo: GWC Automático (gwc.glas.travel) + Manual Independiente
    ================================================================ */
 
 'use strict';
@@ -11,6 +12,7 @@ const PAD = 14;
 let config = { passengers: 1, margin: 10, bok: 0.8, enabled: true, displayMode: 'total' };
 let popup = null;
 let currentNet = 0;
+let currentMode = 'manual'; // 'gwc' o 'manual'
 let saveTimer = null;
 
 async function init() {
@@ -21,15 +23,31 @@ async function init() {
     config = { ...config, ...st };
 
     document.addEventListener('click', onDocClick, true);
-    console.log('[EM Flights] Click listener active');
+    console.log('[EM Flights] Click listener active (GWC automatic detection)');
   } catch (e) {
     console.error('[EM Flights] Init error:', e);
     setTimeout(init, 1000);
   }
 }
 
+// Verifica si la página actual corresponde a GWC (gwc.glas.travel) o entornos de prueba
+function isGwcPage() {
+  const host = window.location.hostname || '';
+  const href = window.location.href || '';
+  return host === 'gwc.glas.travel' ||
+         host.endsWith('.gwc.glas.travel') ||
+         href.includes('gwc.glas.travel/search') ||
+         href.includes('gwc.glas.travel') ||
+         href.includes('test_gwc_simulation') ||
+         href.includes('Probar_EM_Flights');
+}
+
 function onDocClick(e) {
   if (!config.enabled) return;
+
+  // REQUISITO CLAVE: La calculadora automática solo se activa en gwc.glas.travel/search
+  if (!isGwcPage()) return;
+
   if (e.target.closest('.voe-popup')) return;
 
   const target = e.target;
@@ -50,39 +68,47 @@ function onDocClick(e) {
     e.stopImmediatePropagation();
     const net = parsePrice(priceEl.textContent.trim());
     if (!isNaN(net) && net > 0) {
-      showCalculator(net, priceEl);
+      showCalculator(net, priceEl, 'gwc');
     }
   }
 }
 
-chrome.runtime.onMessage.addListener((msg, sender) => {
+// Mensajes recibidos desde el popup o background
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (sender.id !== chrome.runtime.id) return;
 
   if (msg.type === 'TOGGLE_STATE') {
     config.enabled = msg.enabled;
     if (!config.enabled && popup) destroyPopup();
+    if (sendResponse) sendResponse({ ok: true });
   } else if (msg.type === 'OPEN_MANUAL_CALC') {
+    // Calculadora manual: se abre independientemente del dominio
     config = { ...config, ...msg.config };
-    showCalculator(currentNet || 0, null);
+    showCalculator(currentNet || 0, null, 'manual');
+    if (sendResponse) sendResponse({ ok: true });
   }
+  return true;
 });
 
-function showCalculator(netValue, anchorEl = null) {
+function showCalculator(netValue, anchorEl = null, mode = 'manual') {
   currentNet = netValue || 0;
+  currentMode = mode;
 
   if (popup && popup.isConnected) {
     const priceInput = popup.querySelector('#voeNetPrice');
     if (priceInput) priceInput.value = currentNet > 0 ? currentNet : '';
+    applyModeToDOM(popup, mode);
     updateCalculatorUI();
     return;
   }
 
-  popup = renderCalculatorDOM(currentNet);
+  popup = renderCalculatorDOM(currentNet, mode);
   document.body.appendChild(popup);
 
   if (anchorEl) {
     positionNear(popup, anchorEl.getBoundingClientRect());
   } else {
+    // Calculadora manual: centrada en la parte superior
     popup.style.top = '90px';
     popup.style.left = `${Math.max(20, (window.innerWidth - POPUP_W) / 2)}px`;
   }
@@ -91,8 +117,8 @@ function showCalculator(netValue, anchorEl = null) {
   makeResizable(popup);
   document.addEventListener('keydown', onEsc);
 
-  // Focus price field if opened manually with 0
-  if (!netValue || netValue <= 0) {
+  // Foco en precio si se abre manual con valor 0
+  if (mode === 'manual' && (!netValue || netValue <= 0)) {
     setTimeout(() => {
       const field = popup.querySelector('#voeNetPrice');
       if (field) field.focus();
@@ -100,7 +126,27 @@ function showCalculator(netValue, anchorEl = null) {
   }
 }
 
-function renderCalculatorDOM(initialNet) {
+function applyModeToDOM(el, mode) {
+  const badge = el.querySelector('#voeBadge');
+  const priceBoxLabel = el.querySelector('#voePriceBoxLabel');
+  const priceTag = el.querySelector('#voePriceTag');
+  const isGwc = mode === 'gwc';
+
+  if (badge) {
+    badge.className = `voe-badge-pill ${isGwc ? 'voe-badge-gwc' : 'voe-badge-manual'}`;
+    badge.textContent = isGwc ? '✈️ GWC Auto' : '📊 Calc Manual';
+  }
+  if (priceBoxLabel) {
+    priceBoxLabel.textContent = isGwc ? 'Tarifa GWC (Detectada)' : 'Tarifa Neta (Manual)';
+  }
+  if (priceTag) {
+    priceTag.className = `voe-price-tag ${isGwc ? 'voe-price-tag-gwc' : 'voe-price-tag-manual'}`;
+    priceTag.textContent = isGwc ? 'gwc.glas.travel' : 'Cualquier dominio';
+  }
+}
+
+function renderCalculatorDOM(initialNet, mode) {
+  const isGwc = mode === 'gwc';
   const div = document.createElement('div');
   div.className = 'voe-popup';
   div.style.setProperty('--voe-scale', '1');
@@ -109,17 +155,26 @@ function renderCalculatorDOM(initialNet) {
     <div class="voe-header">
       <div class="voe-brand">
         <img class="voe-brand-icon" src="${chrome.runtime.getURL('icons/icon48.png')}" alt="Logo">
-        <span class="voe-brand-name">EM Flights</span>
+        <div class="voe-brand-text">
+          <span class="voe-brand-name">EM Flights</span>
+          <span class="voe-badge-pill ${isGwc ? 'voe-badge-gwc' : 'voe-badge-manual'}" id="voeBadge">
+            ${isGwc ? '✈️ GWC Auto' : '📊 Calc Manual'}
+          </span>
+        </div>
       </div>
       <button class="voe-close" title="Cerrar [ESC]">✕</button>
     </div>
 
     <div class="voe-body">
-      <!-- Tarifa Neta GWC -->
+      <!-- Tarifa Neta -->
       <div class="voe-price-box">
         <div class="voe-price-box-header">
-          <span class="voe-price-label">Tarifa Neta (GWC)</span>
-          <span class="voe-price-tag">Cálculo en vivo</span>
+          <span class="voe-price-label" id="voePriceBoxLabel">
+            ${isGwc ? 'Tarifa GWC (Detectada)' : 'Tarifa Neta (Manual)'}
+          </span>
+          <span class="voe-price-tag ${isGwc ? 'voe-price-tag-gwc' : 'voe-price-tag-manual'}" id="voePriceTag">
+            ${isGwc ? 'gwc.glas.travel' : 'Cualquier dominio'}
+          </span>
         </div>
         <div class="voe-price-input-row">
           <span class="voe-currency-sym">USD</span>
@@ -174,7 +229,7 @@ function renderCalculatorDOM(initialNet) {
 
       <!-- Tarjetas de Resultado -->
       <div class="voe-results">
-        <div class="voe-card voe-card-blue" id="voeFinalCard" title="Clic para copiar">
+        <div class="voe-card voe-card-blue" id="voeFinalCard" title="Clic para copiar cotización">
           <div class="voe-card-content">
             <div class="voe-card-title">Precio final al cliente <span id="voeModeLabel">(${config.displayMode === 'total' ? 'Total' : 'Pax'})</span></div>
             <div class="voe-card-main" id="voeFinalLabel">USD 0</div>
@@ -193,7 +248,7 @@ function renderCalculatorDOM(initialNet) {
       </div>
 
       <div class="voe-footnote" id="voeFootnote">
-        Margen total: 10.8% · Fórm.: Neto ÷ (1 - 0.108)
+        ${isGwc ? '✈️ Modo GWC (gwc.glas.travel)' : '📊 Modo Manual'} · Margen total: 10.8%
       </div>
     </div>
     <div class="voe-resize-handle" title="Arrastra para redimensionar"></div>
@@ -311,7 +366,8 @@ function updateCalculatorUI(targetEl = popup) {
   if (finalLabel) finalLabel.textContent = `USD ${money(showFinal)}`;
   if (profitLabel) profitLabel.textContent = `USD ${money(showProfit)}`;
   if (footnote) {
-    footnote.textContent = `Margen total: ${d.pct.toFixed(1)}% · Fórmula: Neto ÷ (1 - ${(d.pct / 100).toFixed(3)})`;
+    const badgeText = currentMode === 'gwc' ? '✈️ GWC Auto (gwc.glas.travel)' : '📊 Modo Manual';
+    footnote.textContent = `${badgeText} · Margen total: ${d.pct.toFixed(1)}% · Fórm.: Neto ÷ (1 - ${(d.pct / 100).toFixed(3)})`;
   }
 }
 
@@ -325,7 +381,8 @@ function copyQuotation() {
     ? (isTotal ? `Total para ${config.passengers} pasajeros` : `Por pasajero (grupo de ${config.passengers})`)
     : '1 pasajero';
 
-  const text = `✈️ Cotización de Vuelo: USD ${money(price)} (${paxText})`;
+  const modeText = currentMode === 'gwc' ? ' [GWC]' : ' [Manual]';
+  const text = `✈️ Cotización de Vuelo${modeText}: USD ${money(price)} (${paxText})`;
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(showCopiedFeedback).catch(() => fallbackCopy(text));

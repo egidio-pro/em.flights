@@ -68,11 +68,44 @@
   border-radius: 6px !important;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12) !important;
 }
+.voe-brand-text {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
 .voe-brand-name {
   font-weight: 800 !important;
   font-size: 14px !important;
   letter-spacing: -0.3px !important;
   color: var(--voe-text) !important;
+}
+.voe-badge-pill {
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  padding: 2px 7px !important;
+  border-radius: 10px !important;
+  letter-spacing: 0.4px !important;
+  text-transform: uppercase !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+.voe-badge-gwc {
+  background: #E8F2FF !important;
+  color: #0071E3 !important;
+  border: 1px solid rgba(0, 113, 227, 0.25) !important;
+}
+.voe-badge-manual {
+  background: #F5EEFF !important;
+  color: #7C3AED !important;
+  border: 1px solid rgba(124, 58, 237, 0.25) !important;
+}
+.voe-price-tag-gwc {
+  color: #0071E3 !important;
+  background: rgba(0, 113, 227, 0.08) !important;
+}
+.voe-price-tag-manual {
+  color: #7C3AED !important;
+  background: rgba(124, 58, 237, 0.08) !important;
 }
 
 .voe-close {

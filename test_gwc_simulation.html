@@ -429,46 +429,58 @@
         detail: `Final calculado: USD ${Math.round(c1?.final || 0)}`
       });
 
-      // Test 3: Clic en precio y apertura del popup
+      // Test 3: Clic en precio y apertura de calculadora GWC
       const priceEl = document.getElementById('price1');
       priceEl.click();
       await new Promise(r => setTimeout(r, 100));
 
       const popupEl = document.querySelector('.voe-popup');
+      const gwcBadge = popupEl?.querySelector('.voe-badge-gwc');
       tests.push({
-        name: 'Generación del popup flotante unificado en Modo Claro (.voe-popup)',
-        pass: !!popupEl,
-        detail: popupEl ? 'Popup detectado en el DOM' : 'No se encontró el popup'
+        name: 'Apertura automática en GWC con etiqueta visual "✈️ GWC Auto"',
+        pass: !!popupEl && !!gwcBadge,
+        detail: gwcBadge ? `Etiqueta detectada: "${gwcBadge.textContent.trim()}"` : 'No se detectó etiqueta GWC'
       });
 
       // Test 4: Verificación de campo de precio editable
       const netField = popupEl?.querySelector('#voeNetPrice');
       tests.push({
-        name: 'Campo de tarifa neta editable en vivo presente en el popup',
+        name: 'Campo de tarifa neta editable en vivo con valor detectado en GWC',
         pass: netField && parseFloat(netField.value) === 1250,
         detail: `Valor en campo de texto: "${netField?.value}"`
       });
 
-      // Test 5: Presets de margen rápido
-      const presetBtn = popupEl?.querySelector('.voe-preset-btn[data-preset="15"]');
+      // Test 5: Apertura de la Calculadora Manual independiente
+      openManualFromTest();
+      await new Promise(r => setTimeout(r, 100));
+      const manualBadge = document.querySelector('.voe-badge-manual');
+      tests.push({
+        name: 'Apertura de Calculadora Manual con etiqueta visual "📊 Calc Manual"',
+        pass: !!manualBadge,
+        detail: manualBadge ? `Etiqueta detectada: "${manualBadge.textContent.trim()}"` : 'No se detectó etiqueta Manual'
+      });
+
+      // Test 6: Presets de margen rápido
+      const activePopup = document.querySelector('.voe-popup');
+      const presetBtn = activePopup?.querySelector('.voe-preset-btn[data-preset="15"]');
       if (presetBtn) presetBtn.click();
       await new Promise(r => setTimeout(r, 60));
-      const marginInput = popupEl?.querySelector('#voeMarginInput');
+      const marginInput = activePopup?.querySelector('#voeMarginInput');
       tests.push({
         name: 'Botón de Preset de Margen Rápido (15%) aplicó el valor correctamente',
         pass: marginInput && parseFloat(marginInput.value) === 15,
         detail: `Margen actual: ${marginInput?.value}%`
       });
 
-      // Test 6: Botón de copiar cotización
-      const copyBtn = popupEl?.querySelector('#voeCopyBtn');
+      // Test 7: Botón de copiar cotización
+      const copyBtn = activePopup?.querySelector('#voeCopyBtn');
       tests.push({
         name: 'Botón de "Copiar Cotización" presente con icono y feedback visual',
         pass: !!copyBtn,
         detail: copyBtn ? 'Botón detectado' : 'No se encontró el botón de copiar'
       });
 
-      // Test 7: Cierre con Escape
+      // Test 8: Cierre con Escape
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
       await new Promise(r => setTimeout(r, 100));
       const closedPopup = document.querySelector('.voe-popup');
