@@ -487,7 +487,8 @@
       const sinMillasBtn = activePopup?.querySelector('#voeItauSwitcher .voe-switch-btn[data-itau="off"]');
       if (itauBtn) itauBtn.click();
       await new Promise(r => setTimeout(r, 60));
-      const itauBoxVisible = activePopup?.querySelector('#voeItauBox')?.style.display !== 'none';
+      const itauBoxEl = activePopup?.querySelector('#voeItauBox');
+      const itauBoxVisible = itauBoxEl?.classList.contains('active') && window.getComputedStyle(itauBoxEl).display !== 'none';
       tests.push({
         name: 'Conmutador Switcher: Activa sección de Millas Itaú y cotización',
         pass: !!itauBtn && !!sinMillasBtn && itauBoxVisible && config.itauActive === true,
@@ -503,14 +504,15 @@
         detail: `Descuento: USD ${cItauApplied?.itauDiscount} | Total a pagar: USD ${Math.round(cItauApplied?.finalToPay || 0)}`
       });
 
-      // Test 10: Desactivar conmutador desactiva el descuento
+      // Test 10: Desactivar conmutador desactiva el descuento y oculta la tarjeta
       if (sinMillasBtn) sinMillasBtn.click();
       await new Promise(r => setTimeout(r, 60));
       const cSinMillas = calc(1000);
+      const itauBoxHidden = !itauBoxEl?.classList.contains('active') && window.getComputedStyle(itauBoxEl).display === 'none';
       tests.push({
         name: 'Conmutador "SIN MILLAS": Desactiva el descuento y oculta la tarjeta',
-        pass: config.itauActive === false && cSinMillas.itauDiscount === 0 && cSinMillas.finalToPay === cSinMillas.final,
-        detail: `Itaú activo: ${config.itauActive} | Descuento: USD ${cSinMillas.itauDiscount}`
+        pass: config.itauActive === false && itauBoxHidden && cSinMillas.itauDiscount === 0 && cSinMillas.finalToPay === cSinMillas.final,
+        detail: `Itaú activo: ${config.itauActive} | Tarjeta oculta: ${itauBoxHidden} | Descuento: USD ${cSinMillas.itauDiscount}`
       });
 
       // Test 11: Cierre con Escape

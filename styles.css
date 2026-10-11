@@ -259,18 +259,21 @@
   box-shadow: 0 1.5px 5px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Tarjeta de Millas Itaú Volar (Compacta) */
+/* Tarjeta de Millas Itaú Volar (Oculta por defecto cuando está Sin Millas) */
 .voe-itau-box {
   background: #FFFFFF !important;
   border: 1.5px solid var(--voe-card-border) !important;
   border-radius: 13px !important;
   padding: 7px 10px !important;
   margin-bottom: 7px !important;
-  display: flex !important;
+  display: none !important;
   flex-direction: column !important;
   gap: 5px !important;
   box-sizing: border-box !important;
   animation: voeFadeIn 0.15s ease !important;
+}
+.voe-itau-box.active {
+  display: flex !important;
 }
 
 @keyframes voeFadeIn {

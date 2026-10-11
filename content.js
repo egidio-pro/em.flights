@@ -246,8 +246,8 @@ function renderCalculatorDOM(initialNet, mode) {
       <button class="voe-switch-btn ${config.itauActive ? 'active' : ''}" data-itau="on">💳 MILLAS ITAÚ</button>
     </div>
 
-    <!-- Fila 4: Tarjeta de Millas Itaú Volar (Desplegable) -->
-    <div class="voe-itau-box" id="voeItauBox" style="display: ${config.itauActive ? 'flex' : 'none'};">
+    <!-- Fila 4: Tarjeta de Millas Itaú Volar (Desplegable solo si está activo) -->
+    <div class="voe-itau-box ${config.itauActive ? 'active' : ''}" id="voeItauBox">
       <div class="voe-itau-box-header">
         <span class="voe-itau-box-title">💳 Millas Itaú Volar</span>
         <span class="voe-itau-box-badge" id="voeItauDiscountTag">Sin canje</span>
@@ -424,7 +424,7 @@ function updateCalculatorUI(targetEl = popup) {
 
   // Controlar visibilidad del contenedor de millas según switcher
   if (itauBox) {
-    itauBox.style.display = config.itauActive ? 'flex' : 'none';
+    itauBox.classList.toggle('active', !!config.itauActive);
   }
 
   // Actualizar botones del switcher de millas
