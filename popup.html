@@ -275,13 +275,22 @@
     /* Footer */
     .dev-footer {
       text-align: center;
-      padding-top: 12px;
+      padding-top: 10px;
       margin-top: 6px;
       font-size: 11px;
       color: var(--text-sec);
       border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
     }
     .dev-name { font-weight: 800; color: #1E293B; }
+    .dev-license {
+      font-size: 9.5px;
+      color: #64748B;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
 
     .toast {
       position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
@@ -356,7 +365,8 @@
   </div>
 
   <div class="dev-footer">
-    Desarrollado por <span class="dev-name">Egidio Magalhaes</span>
+    <div>Desarrollado por <span class="dev-name">Egidio Magalhaes</span></div>
+    <div class="dev-license">© 2026 PolyForm Noncommercial License · Uso Libre</div>
   </div>
 
   <div class="toast" id="toast"></div>
