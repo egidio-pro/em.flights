@@ -460,24 +460,24 @@
         detail: manualBadge ? `Etiqueta detectada: "${manualBadge.textContent.trim()}"` : 'No se detectó etiqueta Manual'
       });
 
-      // Test 6: Presets de margen rápido
+      // Test 6: Stepper de margen
       const activePopup = document.querySelector('.voe-popup');
-      const presetBtn = activePopup?.querySelector('.voe-preset-btn[data-preset="15"]');
-      if (presetBtn) presetBtn.click();
+      const stepBtn = activePopup?.querySelector('.voe-btn-step[data-field="margin"][data-step="0.5"]');
+      if (stepBtn) stepBtn.click();
       await new Promise(r => setTimeout(r, 60));
       const marginInput = activePopup?.querySelector('#voeMarginInput');
       tests.push({
-        name: 'Botón de Preset de Margen Rápido (15%) aplicó el valor correctamente',
-        pass: marginInput && parseFloat(marginInput.value) === 15,
+        name: 'Botón de incremento de Margen (+0.5%) aplicó el valor correctamente',
+        pass: marginInput && parseFloat(marginInput.value) > 10,
         detail: `Margen actual: ${marginInput?.value}%`
       });
 
-      // Test 7: Botón de copiar cotización
-      const copyBtn = activePopup?.querySelector('#voeCopyBtn');
+      // Test 7: Tarjeta azul con precio final y copiado interactivo
+      const finalBanner = activePopup?.querySelector('#voeFinalBanner');
       tests.push({
-        name: 'Botón de "Copiar Cotización" presente con icono y feedback visual',
-        pass: !!copyBtn,
-        detail: copyBtn ? 'Botón detectado' : 'No se encontró el botón de copiar'
+        name: 'Tarjeta azul con precio final al cliente y copiado interactivo',
+        pass: !!finalBanner,
+        detail: finalBanner ? 'Tarjeta azul presente' : 'No se encontró la tarjeta'
       });
 
       // Test 8: Cierre con Escape

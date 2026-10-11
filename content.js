@@ -1,12 +1,12 @@
 /* ================================================================
    EM FLIGHTS – content.js  v2.1.2
-   Doble Modo: GWC Automático (gwc.glas.travel) + Manual Independiente
+   Diseño de referencia exacto: Calculadora EM (Centrada en Pantalla)
    ================================================================ */
 
 'use strict';
 
-const POPUP_W = 320;
-const POPUP_H_EST = 400;
+const POPUP_W = 330;
+const POPUP_H_EST = 390;
 const PAD = 14;
 
 let config = { passengers: 1, margin: 10, bok: 0.8, enabled: true, displayMode: 'total' };
@@ -68,12 +68,12 @@ function onDocClick(e) {
     e.stopImmediatePropagation();
     const net = parsePrice(priceEl.textContent.trim());
     if (!isNaN(net) && net > 0) {
-      showCalculator(net, priceEl, 'gwc');
+      showCalculator(net, 'gwc');
     }
   }
 }
 
-// Mensajes recibidos desde el popup o background
+// Mensajes recibidos desde popup
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (sender.id !== chrome.runtime.id) return;
 
@@ -82,15 +82,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (!config.enabled && popup) destroyPopup();
     if (sendResponse) sendResponse({ ok: true });
   } else if (msg.type === 'OPEN_MANUAL_CALC') {
-    // Calculadora manual: se abre independientemente del dominio
     config = { ...config, ...msg.config };
-    showCalculator(currentNet || 0, null, 'manual');
+    showCalculator(currentNet || 0, 'manual');
     if (sendResponse) sendResponse({ ok: true });
   }
   return true;
 });
 
-function showCalculator(netValue, anchorEl = null, mode = 'manual') {
+// REQUISITO CRÍTICO: Cada vez que se abre, se posiciona en el CENTRO de la pantalla
+function showCalculator(netValue, mode = 'manual') {
   currentNet = netValue || 0;
   currentMode = mode;
 
@@ -99,25 +99,21 @@ function showCalculator(netValue, anchorEl = null, mode = 'manual') {
     if (priceInput) priceInput.value = currentNet > 0 ? currentNet : '';
     applyModeToDOM(popup, mode);
     updateCalculatorUI();
+    positionCenter(popup);
     return;
   }
 
   popup = renderCalculatorDOM(currentNet, mode);
   document.body.appendChild(popup);
 
-  if (anchorEl) {
-    positionNear(popup, anchorEl.getBoundingClientRect());
-  } else {
-    // Calculadora manual: centrada en la parte superior
-    popup.style.top = '90px';
-    popup.style.left = `${Math.max(20, (window.innerWidth - POPUP_W) / 2)}px`;
-  }
+  // Posicionar siempre en el centro exacto
+  positionCenter(popup);
 
   makeDraggable(popup);
   makeResizable(popup);
   document.addEventListener('keydown', onEsc);
 
-  // Foco en precio si se abre manual con valor 0
+  // Foco en precio si es manual y está vacío
   if (mode === 'manual' && (!netValue || netValue <= 0)) {
     setTimeout(() => {
       const field = popup.querySelector('#voeNetPrice');
@@ -126,22 +122,30 @@ function showCalculator(netValue, anchorEl = null, mode = 'manual') {
   }
 }
 
+function positionCenter(el) {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const w = el.offsetWidth || POPUP_W;
+  const h = el.offsetHeight || POPUP_H_EST;
+  el.style.left = `${Math.max(PAD, Math.round((vw - w) / 2))}px`;
+  el.style.top = `${Math.max(PAD, Math.round((vh - h) / 2))}px`;
+}
+
 function applyModeToDOM(el, mode) {
-  const badge = el.querySelector('#voeBadge');
-  const priceBoxLabel = el.querySelector('#voePriceBoxLabel');
-  const priceTag = el.querySelector('#voePriceTag');
   const isGwc = mode === 'gwc';
+  const badge = el.querySelector('#voeBadge');
+  const netLabel = el.querySelector('#voeNetLabel');
+  const footerNote = el.querySelector('#voeFooterNote');
 
   if (badge) {
     badge.className = `voe-badge-pill ${isGwc ? 'voe-badge-gwc' : 'voe-badge-manual'}`;
-    badge.textContent = isGwc ? '✈️ GWC Auto' : '📊 Calc Manual';
+    badge.textContent = isGwc ? '✈️ GWC' : '📊 Manual';
   }
-  if (priceBoxLabel) {
-    priceBoxLabel.textContent = isGwc ? 'Tarifa GWC (Detectada)' : 'Tarifa Neta (Manual)';
+  if (netLabel) {
+    netLabel.textContent = isGwc ? 'NETO GWC' : 'NETO MANUAL';
   }
-  if (priceTag) {
-    priceTag.className = `voe-price-tag ${isGwc ? 'voe-price-tag-gwc' : 'voe-price-tag-manual'}`;
-    priceTag.textContent = isGwc ? 'gwc.glas.travel' : 'Cualquier dominio';
+  if (footerNote) {
+    footerNote.textContent = isGwc ? 'CALCULADO SEGUN PARAMETROS GWC V2.4' : 'CALCULADORA MANUAL INDEPENDIENTE V2.1.2';
   }
 }
 
@@ -152,112 +156,96 @@ function renderCalculatorDOM(initialNet, mode) {
   div.style.setProperty('--voe-scale', '1');
 
   div.innerHTML = `
+    <!-- Header -->
     <div class="voe-header">
       <div class="voe-brand">
         <img class="voe-brand-icon" src="${chrome.runtime.getURL('icons/icon48.png')}" alt="Logo">
-        <div class="voe-brand-text">
-          <span class="voe-brand-name">EM Flights</span>
+        <div class="voe-brand-info">
+          <span class="voe-brand-name">Calculadora EM</span>
           <span class="voe-badge-pill ${isGwc ? 'voe-badge-gwc' : 'voe-badge-manual'}" id="voeBadge">
-            ${isGwc ? '✈️ GWC Auto' : '📊 Calc Manual'}
+            ${isGwc ? '✈️ GWC' : '📊 Manual'}
           </span>
         </div>
       </div>
       <button class="voe-close" title="Cerrar [ESC]">✕</button>
     </div>
 
-    <div class="voe-body">
-      <!-- Tarifa Neta -->
-      <div class="voe-price-box">
-        <div class="voe-price-box-header">
-          <span class="voe-price-label" id="voePriceBoxLabel">
-            ${isGwc ? 'Tarifa GWC (Detectada)' : 'Tarifa Neta (Manual)'}
-          </span>
-          <span class="voe-price-tag ${isGwc ? 'voe-price-tag-gwc' : 'voe-price-tag-manual'}" id="voePriceTag">
-            ${isGwc ? 'gwc.glas.travel' : 'Cualquier dominio'}
-          </span>
-        </div>
-        <div class="voe-price-input-row">
-          <span class="voe-currency-sym">USD</span>
-          <input type="text" id="voeNetPrice" class="voe-price-field"
-                 placeholder="0.00" value="${initialNet > 0 ? initialNet : ''}" inputmode="decimal">
+    <!-- Fila 1: Neto GWC / Pasajeros -->
+    <div class="voe-grid-row">
+      <div class="voe-mini-card">
+        <span class="voe-mini-label" id="voeNetLabel">${isGwc ? 'NETO GWC' : 'NETO MANUAL'}</span>
+        <div class="voe-net-value-wrap">
+          <span class="voe-net-curr">USD</span>
+          <input type="text" id="voeNetPrice" class="voe-net-input"
+                 value="${initialNet > 0 ? initialNet : ''}" placeholder="0" inputmode="decimal">
         </div>
       </div>
 
-      <!-- Pasajeros -->
-      <div class="voe-setting-row">
-        <span class="voe-setting-label">Pasajeros</span>
-        <div class="voe-step-group">
-          <button class="voe-step-btn" data-field="passengers" data-step="-1">−</button>
-          <input type="number" id="voePaxInput" class="voe-step-input" value="${config.passengers}" min="1" step="1">
-          <button class="voe-step-btn" data-field="passengers" data-step="1">+</button>
+      <div class="voe-mini-card">
+        <span class="voe-mini-label">PASAJEROS</span>
+        <div class="voe-stepper">
+          <button class="voe-btn-step" data-field="passengers" data-step="-1">−</button>
+          <input type="number" id="voePaxInput" class="voe-step-val-input"
+                 value="${config.passengers}" min="1" step="1">
+          <button class="voe-btn-step" data-field="passengers" data-step="1">+</button>
         </div>
-      </div>
-
-      <!-- Margen % -->
-      <div class="voe-setting-row">
-        <span class="voe-setting-label">Margen (%)</span>
-        <div class="voe-step-group">
-          <button class="voe-step-btn" data-field="margin" data-step="-0.5">−</button>
-          <input type="number" id="voeMarginInput" class="voe-step-input" value="${config.margin}" step="0.5" min="0">
-          <button class="voe-step-btn" data-field="margin" data-step="0.5">+</button>
-        </div>
-      </div>
-
-      <!-- Presets de Margen rápido -->
-      <div class="voe-presets">
-        <button class="voe-preset-btn" data-preset="8">8%</button>
-        <button class="voe-preset-btn" data-preset="10">10%</button>
-        <button class="voe-preset-btn" data-preset="12">12%</button>
-        <button class="voe-preset-btn" data-preset="15">15%</button>
-      </div>
-
-      <!-- Bok % -->
-      <div class="voe-setting-row">
-        <span class="voe-setting-label">Bok / Fee (%)</span>
-        <div class="voe-step-group">
-          <button class="voe-step-btn" data-field="bok" data-step="-0.1">−</button>
-          <input type="number" id="voeBokInput" class="voe-step-input" value="${config.bok}" step="0.1" min="0">
-          <button class="voe-step-btn" data-field="bok" data-step="0.1">+</button>
-        </div>
-      </div>
-
-      <!-- Conmutador Total / Pax -->
-      <div class="voe-switcher">
-        <button class="voe-switch-btn ${config.displayMode === 'total' ? 'active' : ''}" data-mode="total">Total</button>
-        <button class="voe-switch-btn ${config.displayMode === 'pax' ? 'active' : ''}" data-mode="pax">Por Pasajero</button>
-      </div>
-
-      <!-- Tarjetas de Resultado -->
-      <div class="voe-results">
-        <div class="voe-card voe-card-blue" id="voeFinalCard" title="Clic para copiar cotización">
-          <div class="voe-card-content">
-            <div class="voe-card-title">Precio final al cliente <span id="voeModeLabel">(${config.displayMode === 'total' ? 'Total' : 'Pax'})</span></div>
-            <div class="voe-card-main" id="voeFinalLabel">USD 0</div>
-          </div>
-          <button class="voe-copy-btn" id="voeCopyBtn" title="Copiar cotización">
-            📋 Copiar
-          </button>
-        </div>
-
-        <div class="voe-card voe-card-green">
-          <div class="voe-card-content">
-            <div class="voe-card-title">Ganancia neta <span id="voeProfitModeLabel">(${config.displayMode === 'total' ? 'Total' : 'Pax'})</span></div>
-            <div class="voe-card-main" id="voeProfitLabel">USD 0</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="voe-footnote" id="voeFootnote">
-        ${isGwc ? '✈️ Modo GWC (gwc.glas.travel)' : '📊 Modo Manual'} · Margen total: 10.8%
       </div>
     </div>
+
+    <!-- Fila 2: TOTAL / POR PAX -->
+    <div class="voe-switcher">
+      <button class="voe-switch-btn ${config.displayMode === 'total' ? 'active' : ''}" data-mode="total">TOTAL</button>
+      <button class="voe-switch-btn ${config.displayMode === 'pax' ? 'active' : ''}" data-mode="pax">POR PAX</button>
+    </div>
+
+    <!-- Fila 3: Margen (%) / Bok (%) -->
+    <div class="voe-grid-row">
+      <div class="voe-mini-card">
+        <span class="voe-mini-label">MARGEN (%)</span>
+        <div class="voe-stepper">
+          <button class="voe-btn-step" data-field="margin" data-step="-0.5">−</button>
+          <input type="number" id="voeMarginInput" class="voe-step-val-input"
+                 value="${config.margin}" step="0.5" min="0">
+          <button class="voe-btn-step" data-field="margin" data-step="0.5">+</button>
+        </div>
+      </div>
+
+      <div class="voe-mini-card">
+        <span class="voe-mini-label">BOK (%)</span>
+        <div class="voe-stepper">
+          <button class="voe-btn-step" data-field="bok" data-step="-0.1">−</button>
+          <input type="number" id="voeBokInput" class="voe-step-val-input"
+                 value="${config.bok}" step="0.1" min="0">
+          <button class="voe-btn-step" data-field="bok" data-step="0.1">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fila 4: Tarjeta Azul (Precio final al cliente) -->
+    <div class="voe-banner-blue" id="voeFinalBanner" title="Clic para copiar cotización">
+      <div class="voe-banner-blue-title">PRECIO FINAL AL CLIENTE <span id="voeModeLabel">(${config.displayMode === 'total' ? 'Total' : 'Pax'})</span></div>
+      <div class="voe-banner-blue-val" id="voeFinalLabel">USD 0</div>
+      <div class="voe-copied-hint" id="voeCopyHint" style="display: none;">✓ ¡COPIADO AL PORTAPAPELES!</div>
+    </div>
+
+    <!-- Fila 5: Tarjeta Verde (Ganancia neta) -->
+    <div class="voe-banner-green">
+      <div class="voe-banner-green-title">GANANCIA NETA <span id="voeProfitModeLabel">(${config.displayMode === 'total' ? 'Total' : 'Pax'})</span></div>
+      <div class="voe-banner-green-val" id="voeProfitLabel">USD 0</div>
+    </div>
+
+    <!-- Footer -->
+    <div class="voe-footer-note" id="voeFooterNote">
+      ${isGwc ? 'CALCULADO SEGUN PARAMETROS GWC V2.4' : 'CALCULADORA MANUAL INDEPENDIENTE V2.1.2'}
+    </div>
+
     <div class="voe-resize-handle" title="Arrastra para redimensionar"></div>
   `;
 
   // Cerrar
   div.querySelector('.voe-close').onclick = destroyPopup;
 
-  // Entrada de precio en vivo
+  // Entrada de precio editable en vivo
   const priceInput = div.querySelector('#voeNetPrice');
   priceInput.addEventListener('input', (e) => {
     currentNet = parsePrice(e.target.value) || 0;
@@ -265,7 +253,7 @@ function renderCalculatorDOM(initialNet, mode) {
   });
 
   // Botones +/-
-  div.querySelectorAll('.voe-step-btn').forEach(btn => {
+  div.querySelectorAll('.voe-btn-step').forEach(btn => {
     btn.addEventListener('click', () => {
       const field = btn.dataset.field;
       const step = parseFloat(btn.dataset.step);
@@ -301,17 +289,7 @@ function renderCalculatorDOM(initialNet, mode) {
     updateCalculatorUI();
   });
 
-  // Presets de margen
-  div.querySelectorAll('.voe-preset-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      config.margin = parseFloat(btn.dataset.preset);
-      div.querySelector('#voeMarginInput').value = config.margin;
-      persistConfig();
-      updateCalculatorUI();
-    });
-  });
-
-  // Conmutador Total vs Pax
+  // Conmutador TOTAL / POR PAX
   div.querySelectorAll('.voe-switch-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       config.displayMode = btn.dataset.mode;
@@ -321,15 +299,8 @@ function renderCalculatorDOM(initialNet, mode) {
     });
   });
 
-  // Copiar cotización
-  const copyBtn = div.querySelector('#voeCopyBtn');
-  const copyCard = div.querySelector('#voeFinalCard');
-  copyBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    copyQuotation();
-  });
-  copyCard.addEventListener('click', (e) => {
-    if (e.target.closest('#voeCopyBtn')) return;
+  // Copiar cotización al hacer clic en la tarjeta azul
+  div.querySelector('#voeFinalBanner').addEventListener('click', () => {
     copyQuotation();
   });
 
@@ -345,7 +316,6 @@ function updateCalculatorUI(targetEl = popup) {
   const profitLabel = targetEl.querySelector('#voeProfitLabel');
   const modeLabel = targetEl.querySelector('#voeModeLabel');
   const profitModeLabel = targetEl.querySelector('#voeProfitModeLabel');
-  const footnote = targetEl.querySelector('#voeFootnote');
 
   const isTotal = config.displayMode === 'total';
   const modeText = `(${isTotal ? 'Total' : 'Pax'})`;
@@ -356,7 +326,6 @@ function updateCalculatorUI(targetEl = popup) {
   if (!d) {
     if (finalLabel) finalLabel.textContent = 'Error: % ≥ 100';
     if (profitLabel) profitLabel.textContent = '—';
-    if (footnote) footnote.textContent = 'La suma de Margen y Bok no puede superar el 100%';
     return;
   }
 
@@ -365,10 +334,6 @@ function updateCalculatorUI(targetEl = popup) {
 
   if (finalLabel) finalLabel.textContent = `USD ${money(showFinal)}`;
   if (profitLabel) profitLabel.textContent = `USD ${money(showProfit)}`;
-  if (footnote) {
-    const badgeText = currentMode === 'gwc' ? '✈️ GWC Auto (gwc.glas.travel)' : '📊 Modo Manual';
-    footnote.textContent = `${badgeText} · Margen total: ${d.pct.toFixed(1)}% · Fórm.: Neto ÷ (1 - ${(d.pct / 100).toFixed(3)})`;
-  }
 }
 
 function copyQuotation() {
@@ -406,15 +371,11 @@ function fallbackCopy(text) {
 }
 
 function showCopiedFeedback() {
-  const copyBtn = popup?.querySelector('#voeCopyBtn');
-  if (copyBtn) {
-    copyBtn.textContent = '✓ ¡Copiado!';
-    copyBtn.classList.add('copied');
+  const hint = popup?.querySelector('#voeCopyHint');
+  if (hint) {
+    hint.style.display = 'block';
     setTimeout(() => {
-      if (copyBtn) {
-        copyBtn.textContent = '📋 Copiar';
-        copyBtn.classList.remove('copied');
-      }
+      if (hint) hint.style.display = 'none';
     }, 1800);
   }
 }
@@ -474,15 +435,6 @@ function persistConfig() {
       displayMode: config.displayMode
     });
   }, 400);
-}
-
-function positionNear(el, rect) {
-  let top = rect.bottom + PAD;
-  let left = rect.left;
-  if (top + POPUP_H_EST > window.innerHeight) top = rect.top - POPUP_H_EST - PAD;
-  if (left + POPUP_W > window.innerWidth) left = window.innerWidth - POPUP_W - PAD;
-  el.style.top = `${Math.max(PAD, top)}px`;
-  el.style.left = `${Math.max(PAD, left)}px`;
 }
 
 function makeDraggable(el) {

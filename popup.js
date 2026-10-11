@@ -69,6 +69,11 @@ openManualCalcBtn.addEventListener('click', async () => {
 
 function setToggleUI(enabled) {
   toggleLbl.textContent = enabled ? 'Calculadora activa' : 'Calculadora inactiva';
+  const statusPill = document.getElementById('statusPill');
+  if (statusPill) {
+    statusPill.textContent = enabled ? '● SISTEMA EN LÍNEA' : '○ SISTEMA DESCONECTADO';
+    statusPill.className = `switch-status ${enabled ? '' : 'off'}`;
+  }
 }
 
 function showToast(msg, type = 'ok') {
