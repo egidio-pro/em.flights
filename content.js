@@ -248,9 +248,25 @@ function parsePrice(text) {
   if (!text) return NaN;
   let clean = text.replace(/[^\d.,]/g, '');
   if (clean.includes('.') && clean.includes(',')) {
-    clean = clean.replace(/\./g, '').replace(',', '.');
+    const lastDot = clean.lastIndexOf('.');
+    const lastComma = clean.lastIndexOf(',');
+    if (lastComma > lastDot) {
+      clean = clean.replace(/\./g, '').replace(',', '.');
+    } else {
+      clean = clean.replace(/,/g, '');
+    }
   } else if (clean.includes(',')) {
-    clean = clean.replace(',', '.');
+    const parts = clean.split(',');
+    if (parts.length === 2 && parts[1].length === 3 && parseInt(parts[0]) > 0) {
+      clean = clean.replace(/,/g, '');
+    } else {
+      clean = clean.replace(',', '.');
+    }
+  } else if (clean.includes('.')) {
+    const parts = clean.split('.');
+    if (parts.length === 2 && parts[1].length === 3 && parseInt(parts[0]) > 0) {
+      clean = clean.replace(/\./g, '');
+    }
   }
   return parseFloat(clean);
 }
@@ -443,33 +459,43 @@ function positionPopup(el, rect) {
 
 function makeDraggable(el) {
   const h = el.querySelector('.voe-header');
-  let d = false, ox, oy, sl, st;
-  h.onmousedown = (e) => {
-    if (e.target.closest('.voe-close') || e.target.closest('.voe-switch') || e.target.closest('input')) return;
-    d = true; ox = e.clientX; oy = e.clientY;
-    sl = parseInt(el.style.left); st = parseInt(el.style.top);
-    document.onmousemove = (me) => {
-      if (!d) return;
+  if (!h) return;
+  h.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.voe-close') || e.target.closest('.voe-switch') || e.target.closest('input') || e.target.closest('button')) return;
+    const ox = e.clientX, oy = e.clientY;
+    const sl = parseInt(el.style.left) || 0, st = parseInt(el.style.top) || 0;
+
+    function onMove(me) {
       el.style.left = `${sl + me.clientX - ox}px`;
       el.style.top = `${st + me.clientY - oy}px`;
-    };
-    document.onmouseup = () => d = false;
-  };
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
 }
 
 function makeResizable(el) {
   const r = el.querySelector('.voe-resize-handle');
-  let rs = false, ox, os;
-  r.onmousedown = (e) => {
-    rs = true; ox = e.clientX;
-    os = parseFloat(el.style.getPropertyValue('--voe-scale')) || 1;
-    document.onmousemove = (me) => {
-      if (!rs) return;
-      const s = Math.max(0.6, Math.min(1.5, os + (me.clientX - ox)/250));
+  if (!r) return;
+  r.addEventListener('mousedown', (e) => {
+    const ox = e.clientX;
+    const os = parseFloat(el.style.getPropertyValue('--voe-scale')) || 1;
+
+    function onMove(me) {
+      const s = Math.max(0.6, Math.min(1.5, os + (me.clientX - ox) / 250));
       el.style.setProperty('--voe-scale', s);
-    };
-    document.onmouseup = () => rs = false;
-  };
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
 }
 
 function destroyPopup() {
