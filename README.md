@@ -4,7 +4,7 @@
 
 [![Version](https://img.shields.io/badge/version-2.1.2-blue.svg)](https://github.com/egidio-pro/em.flights)
 [![Manifest](https://img.shields.io/badge/manifest-v3-green.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
-[![License: PolyForm Noncommercial](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-orange.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0/)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Platform](https://img.shields.io/badge/platform-Google%20Chrome-4285F4.svg)](https://www.google.com/chrome/)
 
 ---
@@ -52,7 +52,7 @@ EM Flights/
 │   ├── icon48.png
 │   └── icon128.png
 ├── test_gwc_simulation.html   # Suite de pruebas automatizadas y simulador GWC
-├── LICENSE                    # PolyForm Noncommercial License 1.0.0
+├── LICENSE                    # GNU General Public License v3.0 (GPL-3.0)
 └── README.md                  # Documentación del proyecto
 ```
 
@@ -99,11 +99,11 @@ Puedes probar todas las funciones interactivas y la suite de tests automatizados
 
 ## 📄 Licencia
 
-Este software se distribuye bajo la **PolyForm Noncommercial License 1.0.0**.
+Este software es **Software Libre** y se distribuye bajo los términos de la **GNU General Public License v3.0 (GPL-3.0)**.
 
-* **Uso Libre**: Puedes utilizar, consultar y modificar este software libremente para fines personales, educativos, de prueba o no comerciales.
-* **Propósito No Comercial**: No está autorizado su uso directo para explotación comercial o compensación monetaria sin autorización del autor.
-* Consulta el texto completo en el archivo [LICENSE](LICENSE) o en <https://polyformproject.org/licenses/noncommercial/1.0.0/>.
+* **Libertad de Uso y Modificación**: Tienes total libertad para ejecutar, estudiar, modificar y redistribuir este programa.
+* **Copyleft**: Cualquier redistribución o trabajo derivado debe ser distribuido bajo la misma licencia GPL v3 y con código fuente accesible.
+* Consulta el texto completo de la licencia en el archivo [LICENSE](LICENSE) o en <https://www.gnu.org/licenses/gpl-3.0.html>.
 
 ---
 
@@ -112,4 +112,4 @@ Este software se distribuye bajo la **PolyForm Noncommercial License 1.0.0**.
 Desarrollado por **Egidio Magalhaes**  
 * GitHub: [@egidio-pro](https://github.com/egidio-pro)  
 * Repositorio: [https://github.com/egidio-pro/em.flights](https://github.com/egidio-pro/em.flights)  
-* © 2026 Egidio Magalhaes · PolyForm Noncommercial License · Uso Libre
+* © 2026 Egidio Magalhaes · GNU General Public License v3.0 (GPL-3.0) · Software Libre
