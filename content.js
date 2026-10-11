@@ -61,24 +61,199 @@ function isGwcPage() {
          href.includes('gwc.glas.travel');
 }
 
+// Detección automática inteligente de cantidad de pasajeros en GWC (gwc.glas.travel)
+function detectGwcPassengers(priceEl) {
+  let detected = 0;
+
+  // 1. Detección en la URL (parámetros de consulta o ruta de búsqueda de GWC)
+  try {
+    const rawSearch = window.location.search || (window.location.hash.includes('?') ? window.location.hash.substring(window.location.hash.indexOf('?')) : '');
+    const params = new URLSearchParams(rawSearch);
+
+    // Búsqueda de parámetros directos
+    const directKeys = ['passengers', 'pax', 'totalpax', 'travelers', 'pasajeros', 'cantpax', 'qty'];
+    for (const k of directKeys) {
+      const val = parseInt(params.get(k), 10);
+      if (val > 0 && val <= 30) {
+        detected = val;
+        break;
+      }
+    }
+
+    // Búsqueda de suma de adultos + menores + infantes en URL
+    if (!detected) {
+      const adt = parseInt(params.get('adults') || params.get('adultos') || params.get('adt') || params.get('adult') || '0', 10);
+      const chd = parseInt(params.get('children') || params.get('menores') || params.get('chd') || params.get('child') || params.get('kids') || '0', 10);
+      const inf = parseInt(params.get('infants') || params.get('inf') || params.get('infant') || params.get('bebes') || '0', 10);
+      const sum = adt + chd + inf;
+      if (sum > 0 && sum <= 30) {
+        detected = sum;
+      }
+    }
+
+    // Análisis de segmentos en la ruta de búsqueda (ej. /search/MVD/MIA/2026-11-20/2/0/0)
+    if (!detected && window.location.pathname) {
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      for (let i = 0; i < parts.length; i++) {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(parts[i]) && parts[i + 1] && /^[1-9]$/.test(parts[i + 1])) {
+          const adtSeg = parseInt(parts[i + 1], 10);
+          const chdSeg = parseInt(parts[i + 2], 10) || 0;
+          const infSeg = parseInt(parts[i + 3], 10) || 0;
+          detected = adtSeg + chdSeg + infSeg;
+          break;
+        }
+      }
+    }
+  } catch (_) {}
+
+  if (detected > 0) return detected;
+
+  // 2. Detección en la tarjeta del vuelo actual (contenedor del precio clicado)
+  if (priceEl) {
+    const card = priceEl.closest('.flight-item') ||
+                 priceEl.closest('[class*="flight-item"]') ||
+                 priceEl.closest('.flight-card') ||
+                 priceEl.closest('[class*="flight"]') ||
+                 priceEl.closest('[class*="card"]') ||
+                 priceEl.closest('tr') ||
+                 priceEl.parentElement?.parentElement?.parentElement?.parentElement ||
+                 priceEl.parentElement?.parentElement?.parentElement;
+
+    if (card) {
+      const cardText = card.innerText || card.textContent || '';
+      // Formato desglosado primero: "2 Adultos, 1 Niño"
+      const adtM = cardText.match(/(\d+)\s*(?:adulto|adt|adult)s?/i);
+      const chdM = cardText.match(/(\d+)\s*(?:niño|menor|chd|child)s?/i);
+      const infM = cardText.match(/(\d+)\s*(?:bebé|infante|inf)s?/i);
+      if (adtM || chdM || infM) {
+        const sum = (adtM ? parseInt(adtM[1], 10) : 0) +
+                    (chdM ? parseInt(chdM[1], 10) : 0) +
+                    (infM ? parseInt(infM[1], 10) : 0);
+        if (sum > 0 && sum <= 30) return sum;
+      }
+      const match = cardText.match(/(\d+)\s*(?:pasajero|pax|viajero|persona)s?/i);
+      if (match) {
+        const val = parseInt(match[1], 10);
+        if (val > 0 && val <= 30) return val;
+      }
+    }
+  }
+
+  // 3. Detección en la barra de búsqueda y encabezados de GWC (Blazor UI)
+  const selectors = [
+    '[class*="passenger"]',
+    '[class*="pax"]',
+    '[class*="traveler"]',
+    '[class*="search-summary"]',
+    '[class*="flight-search"]',
+    '[class*="filter"]',
+    'header',
+    'nav',
+    'button',
+    'input[type="number"]'
+  ];
+
+  for (const sel of selectors) {
+    try {
+      const elements = document.querySelectorAll(sel);
+      for (const el of elements) {
+        if (el.closest('.voe-popup')) continue;
+
+        // Si es un input numérico con nombre o id relacionado con pax
+        if (el.tagName === 'INPUT') {
+          const nameAttr = (el.name || el.id || el.className || '').toLowerCase();
+          if (nameAttr.includes('pax') || nameAttr.includes('adult') || nameAttr.includes('passenger') || nameAttr.includes('viajero')) {
+            const val = parseInt(el.value, 10);
+            if (val > 0 && val <= 30) return val;
+          }
+        }
+
+        const txt = (el.innerText || el.textContent || el.getAttribute('aria-label') || '').trim();
+        if (!txt) continue;
+
+        // Formato detallado: ej "2 Adultos, 1 Niño" o "2 Adt · 1 Chd"
+        const adtM = txt.match(/(\d+)\s*(?:adulto|adt|adult)s?/i);
+        const chdM = txt.match(/(\d+)\s*(?:niño|menor|chd|child)s?/i);
+        const infM = txt.match(/(\d+)\s*(?:bebé|infante|inf)s?/i);
+
+        if (adtM || chdM || infM) {
+          const sum = (adtM ? parseInt(adtM[1], 10) : 0) +
+                      (chdM ? parseInt(chdM[1], 10) : 0) +
+                      (infM ? parseInt(infM[1], 10) : 0);
+          if (sum > 0 && sum <= 30) return sum;
+        }
+
+        // Formato directo: ej "2 Pasajeros", "3 Pax", "2 Viajeros"
+        const genM = txt.match(/(\d+)\s*(?:pasajero|pax|viajero|persona)s?/i);
+        if (genM) {
+          const val = parseInt(genM[1], 10);
+          if (val > 0 && val <= 30) return val;
+        }
+      }
+    } catch (_) {}
+  }
+
+  // 4. Detección en sessionStorage / localStorage (criterios de búsqueda almacenados en Blazor)
+  try {
+    const storages = [sessionStorage, localStorage];
+    for (const st of storages) {
+      for (let i = 0; i < st.length; i++) {
+        const k = (st.key(i) || '').toLowerCase();
+        if (k.includes('search') || k.includes('pax') || k.includes('flight') || k.includes('criteria') || k.includes('filter')) {
+          const raw = st.getItem(st.key(i));
+          if (raw && typeof raw === 'string') {
+            try {
+              const obj = JSON.parse(raw);
+              if (obj && typeof obj === 'object') {
+                const p = obj.passengers || obj.pax || obj.travelers || obj.totalPax;
+                if (p && parseInt(p, 10) > 0) return parseInt(p, 10);
+
+                const adts = parseInt(obj.adults || obj.adt || obj.adult || 0, 10);
+                const chds = parseInt(obj.children || obj.chd || obj.child || 0, 10);
+                const infs = parseInt(obj.infants || obj.inf || obj.infant || 0, 10);
+                if (adts + chds + infs > 0) return adts + chds + infs;
+              }
+            } catch (_) {}
+          }
+        }
+      }
+    }
+  } catch (_) {}
+
+  // 5. Escaneo por expresiones regulares en el texto superior de la página
+  try {
+    const topText = (document.body?.innerText || '').substring(0, 3000);
+    const broadMatch = topText.match(/(\d+)\s*(?:Adulto|Pasajero|Viajero)s?(?:\s*[,·+]\s*(\d+)\s*(?:Niño|Menor)s?)?/i);
+    if (broadMatch) {
+      const ad = parseInt(broadMatch[1], 10) || 0;
+      const ch = parseInt(broadMatch[2], 10) || 0;
+      if (ad + ch > 0 && ad + ch <= 30) return ad + ch;
+    }
+  } catch (_) {}
+
+  return 0;
+}
+
 function onDocClick(e) {
   if (!config.enabled) return;
 
   // REQUISITO CLAVE: La calculadora automática solo se activa en gwc.glas.travel/search
   if (!isGwcPage()) return;
 
-  if (e.target.closest('.voe-popup')) return;
-
   const target = e.target;
+  if (!target) return;
+  if (target.closest('.voe-popup')) return;
+
   let priceEl = null;
 
-  if (target.tagName === 'STRONG' && target.classList.contains('priceNumb')) {
-    priceEl = target;
-  } else if (target.classList.contains('priceNumb')) {
-    priceEl = target;
+  if (target.closest('strong.priceNumb') || target.closest('.priceNumb')) {
+    priceEl = target.closest('strong.priceNumb') || target.closest('.priceNumb');
   } else if (target.closest('.price-cont')) {
     const container = target.closest('.price-cont');
-    priceEl = container.querySelector('strong.priceNumb');
+    priceEl = container.querySelector('strong.priceNumb') || container.querySelector('.priceNumb');
+  } else if (target.closest('.flight-item-price')) {
+    const container = target.closest('.flight-item-price');
+    priceEl = container.querySelector('strong.priceNumb') || container.querySelector('.priceNumb');
   }
 
   if (priceEl) {
@@ -87,6 +262,11 @@ function onDocClick(e) {
     e.stopImmediatePropagation();
     const net = parsePrice(priceEl.textContent.trim());
     if (!isNaN(net) && net > 0) {
+      // Detección automática de pasajeros en GWC
+      const detectedPax = detectGwcPassengers(priceEl);
+      if (detectedPax > 0) {
+        config.passengers = detectedPax;
+      }
       showCalculator(net, 'gwc');
     }
   }
@@ -120,6 +300,8 @@ function showCalculator(netValue, mode = 'manual') {
   if (popup && popup.isConnected) {
     const priceInput = popup.querySelector('#voeNetPrice');
     if (priceInput) priceInput.value = currentNet > 0 ? currentNet : '';
+    const paxInput = popup.querySelector('#voePaxInput');
+    if (paxInput) paxInput.value = config.passengers;
     applyModeToDOM(popup, mode);
     updateCalculatorUI();
     positionCenter(popup);
