@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "EM Flights",
-  "version": "1.2.0",
+  "version": "1.4.0",
   "description": "Calculadora de margen real para GWC",
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["storage", "activeTab", "scripting"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
   },
@@ -22,7 +22,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://gwc.netviax.com/search*"],
+      "matches": ["<all_urls>"],
       "js":  ["content.js"],
       "css": ["styles.css"],
       "run_at": "document_idle",
@@ -33,7 +33,7 @@
   "web_accessible_resources": [
     {
       "resources": ["icons/*"],
-      "matches": ["*://*.netviax.com/*"]
+      "matches": ["<all_urls>"]
     }
   ]
 }

@@ -1,201 +1,248 @@
 /* ================================================================
-   EM FLIGHTS – content.js  v1.2.0 (Manual Input)
+   EM FLIGHTS – content.js  v1.4.0 (GWC + Manual Calc)
    ================================================================ */
 
 'use strict';
 
-const POPUP_W    = 290;
+const POPUP_W = 290;
 const POPUP_H_EST = 340;
-const PAD        = 12;
+const PAD = 12;
 
-let config     = { passengers: 1, margin: 10, bok: 0.8, enabled: true, displayMode: 'total' };
-let popup      = null;
+let config = { passengers: 1, margin: 10, bok: 0.8, enabled: true, displayMode: 'total' };
+let popup = null;
 let currentNet = null;
-let saveTimer  = null;
-let isInitialized = false;
-let mutationObserver = null;
-
-const PRICE_SELECTORS = '.priceNumb, .price-numb, [class*="priceNumb"], .totalPrice, .amount, [data-price], [class*="price"]';
+let saveTimer = null;
 
 async function init() {
-  if (isInitialized) {
-    console.log('[EM Flights] Already initialized, skipping...');
-    return;
-  }
+  console.log('[EM Flights] Starting v1.4.0...');
 
   try {
-    console.log('[EM Flights] Initializing extension...');
     const st = await chrome.storage.sync.get({ passengers:1, margin:10, bok:0.8, enabled:true, displayMode:'total' });
     config = { ...config, ...st };
-    isInitialized = true;
 
-    // Add click listener with error handling
-    document.addEventListener('click', handleGlobalClick, true);
-    console.log('[EM Flights] Click listener attached');
+    document.addEventListener('click', onDocClick, true);
+    console.log('[EM Flights] Click listener active');
 
-    // Setup MutationObserver for SPA navigation
-    setupMutationObserver();
+    setTimeout(scanPrices, 1500);
 
-    // Validate setup periodically
-    setInterval(validateSetup, 5000);
-
-    console.log('[EM Flights] Initialization complete');
   } catch(e) {
-    console.error('[EM Flights] Error init:', e);
+    console.error('[EM Flights] Init error:', e);
+    setTimeout(init, 1000);
   }
 }
 
-function setupMutationObserver() {
-  if (mutationObserver) {
-    mutationObserver.disconnect();
+function onDocClick(e) {
+  if (!config.enabled) return;
+  if (e.target.closest('.voe-popup')) return;
+
+  const target = e.target;
+
+  let priceEl = null;
+
+  if (target.tagName === 'STRONG' && target.classList.contains('priceNumb')) {
+    priceEl = target;
+  } else if (target.classList.contains('priceNumb')) {
+    priceEl = target;
+  } else if (target.closest('.price-cont')) {
+    const container = target.closest('.price-cont');
+    priceEl = container.querySelector('strong.priceNumb');
   }
 
-  mutationObserver = new MutationObserver((mutations) => {
-    let shouldCheck = false;
-    for (const mutation of mutations) {
-      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-        // Check if new nodes contain price elements
-        for (const node of mutation.addedNodes) {
-          if (node.nodeType === Node.ELEMENT_NODE &&
-              (node.matches && node.matches(PRICE_SELECTORS) ||
-               node.querySelector && node.querySelector(PRICE_SELECTORS))) {
-            shouldCheck = true;
-            break;
-          }
-        }
-      }
-    }
-
-    if (shouldCheck) {
-      console.log('[EM Flights] Detected potential price elements, validating setup...');
-      validateSetup();
-    }
-  });
-
-  mutationObserver.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-
-  console.log('[EM Flights] MutationObserver attached');
-}
-
-function validateSetup() {
-  if (!isInitialized) return;
-
-  try {
-    // Check if click listener is still attached
-    const testElement = document.createElement('div');
-    testElement.setAttribute('class', 'priceNumb');
-    testElement.textContent = '123';
-    document.body.appendChild(testElement);
-
-    // Simulate click to test
-    const event = new MouseEvent('click', { bubbles: true });
-    testElement.dispatchEvent(event);
-
-    document.body.removeChild(testElement);
-
-    // If we get here without errors, setup is working
-    console.log('[EM Flights] Setup validation passed');
-  } catch(e) {
-    console.warn('[EM Flights] Setup validation failed, reinitializing...', e);
-    reinitialize();
-  }
-}
-
-function reinitialize() {
-  console.log('[EM Flights] Reinitializing...');
-  destroyPopup();
-  isInitialized = false;
-  if (mutationObserver) {
-    mutationObserver.disconnect();
-    mutationObserver = null;
-  }
-  document.removeEventListener('click', handleGlobalClick, true);
-  init();
-}
-
-function handleGlobalClick(e) {
-  try {
-    if (!isInitialized) {
-      console.warn('[EM Flights] Click received but extension not initialized');
-      return;
-    }
-
-    if (!config.enabled) {
-      console.log('[EM Flights] Click ignored - extension disabled');
-      return;
-    }
-
-    const el = e.target.closest(PRICE_SELECTORS);
-    if (e.altKey) {
-      console.log('[EM Flights] Debug - Target:', e.target.className, 'Closest price element:', el);
-      console.log('[EM Flights] Debug - All price selectors found:', document.querySelectorAll(PRICE_SELECTORS).length);
-    }
-
-    if (!el) {
-      // Log potential missed clicks for debugging
-      if (e.altKey) {
-        console.log('[EM Flights] No price element found for click target:', e.target);
-      }
-      return;
-    }
-
-    console.log('[EM Flights] Price element clicked:', el.textContent);
-
+  if (priceEl) {
+    console.log('[EM Flights] Price clicked:', priceEl.textContent);
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
-
-    const net = parsePrice(el.textContent);
-    console.log('[EM Flights] Parsed price:', net);
-
-    if (isNaN(net) || net <= 0) {
-      console.warn('[EM Flights] Invalid price parsed:', el.textContent, '->', net);
-      return;
-    }
-
-    if (popup && popup.isConnected) {
-      console.log('[EM Flights] Updating existing popup with new price');
-      currentNet = net;
-      refreshPopupData(net);
-    } else {
-      console.log('[EM Flights] Creating new popup');
-      currentNet = net;
-      popup = createPopup(net);
-      document.body.appendChild(popup);
-      positionPopup(popup, el.getBoundingClientRect());
-      makeDraggable(popup);
-      makeResizable(popup);
-      document.addEventListener('keydown', onEsc);
-    }
-  } catch(error) {
-    console.error('[EM Flights] Error in handleGlobalClick:', error);
-    // Try to recover by reinitializing
-    setTimeout(() => reinitialize(), 1000);
+    showPopup(priceEl);
   }
 }
 
+function showPopup(priceEl, manualConfig = null) {
+  const rect = priceEl.getBoundingClientRect();
+  const text = priceEl.textContent.trim();
+  const net = parsePrice(text);
+
+  console.log('[EM Flights] Parsed:', text, '->', net);
+
+  if (isNaN(net) || net <= 0) return;
+
+  const activeConfig = manualConfig || config;
+
+  if (popup && popup.isConnected) {
+    currentNet = net;
+    refreshPopupData(net, activeConfig);
+  } else {
+    currentNet = net;
+    popup = createPopup(net, activeConfig);
+    document.body.appendChild(popup);
+    positionPopup(popup, rect);
+    makeDraggable(popup);
+    makeResizable(popup);
+    document.addEventListener('keydown', onEsc);
+  }
+}
+
+function scanPrices() {
+  const prices = document.querySelectorAll('strong.priceNumb');
+  console.log('[EM Flights] Found', prices.length, 'prices');
+}
+
 chrome.runtime.onMessage.addListener((msg, sender) => {
-  try {
-    if (sender.id !== chrome.runtime.id) return;
+  if (sender.id !== chrome.runtime.id) return;
 
-    console.log('[EM Flights] Received message:', msg.type);
-
-    if (msg.type === 'TOGGLE_STATE') {
-      config.enabled = msg.enabled;
-      console.log('[EM Flights] Extension', config.enabled ? 'enabled' : 'disabled');
-      if (!config.enabled) destroyPopup();
-    } else if (msg.type === 'CONFIG_UPDATED') {
-      if (msg.config.passengers !== undefined) config.passengers = msg.config.passengers;
-      if (popup && popup.isConnected) renderPopupBody();
-      console.log('[EM Flights] Config updated:', msg.config);
-    }
-  } catch(error) {
-    console.error('[EM Flights] Error handling message:', error);
+  if (msg.type === 'TOGGLE_STATE') {
+    config.enabled = msg.enabled;
+    if (!config.enabled && popup) destroyPopup();
+  }
+  else if (msg.type === 'OPEN_MANUAL_CALC') {
+    console.log('[EM Flights] Opening manual calculator');
+    config = { ...config, ...msg.config };
+    showManualCalc(msg.config);
   }
 });
+
+function showManualCalc(cfg) {
+  destroyPopup();
+
+  const div = document.createElement('div');
+  div.className = 'voe-popup voe-manual-popup';
+  div.style.setProperty('--voe-scale', '1');
+  div.innerHTML = `
+    <div class="voe-header">
+      <div class="voe-brand">
+        <img class="voe-brand-icon" src="${chrome.runtime.getURL('icons/icon48.png')}" alt="Logo">
+        <span class="voe-brand-name">EM Flights - Calculadora</span>
+      </div>
+      <button class="voe-close">✕</button>
+    </div>
+    <div class="voe-body">
+      <div class="voe-input-price">
+        <label class="voe-price-label">Precio Neto (USD)</label>
+        <input type="number" id="manualNetInput" class="voe-price-field" placeholder="0.00" step="0.01" value="">
+      </div>
+      <div class="voe-settings-row">
+        <div class="voe-setting-item">
+          <label>Pasajeros</label>
+          <div class="voe-step-group">
+            <button class="voe-step-btn" data-key="passengers" data-v="-1">-</button>
+            <input type="number" id="manualPax" value="${cfg.passengers}" min="1" step="1">
+            <button class="voe-step-btn" data-key="passengers" data-v="1">+</button>
+          </div>
+        </div>
+        <div class="voe-setting-item">
+          <label>Margen %</label>
+          <div class="voe-step-group">
+            <button class="voe-step-btn" data-key="margin" data-v="-0.5">-</button>
+            <input type="number" id="manualMargin" value="${cfg.margin}" step="0.1" min="0">
+            <button class="voe-step-btn" data-key="margin" data-v="0.5">+</button>
+          </div>
+        </div>
+        <div class="voe-setting-item">
+          <label>Bok %</label>
+          <div class="voe-step-group">
+            <button class="voe-step-btn" data-key="bok" data-v="-0.1">-</button>
+            <input type="number" id="manualBok" value="${cfg.bok}" step="0.1" min="0">
+            <button class="voe-step-btn" data-key="bok" data-v="0.1">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="voe-mode-switcher">
+        <button class="voe-mode-btn active" data-mode="total">Total</button>
+        <button class="voe-mode-btn" data-mode="pax">Por Pax</button>
+      </div>
+      <div class="voe-results">
+        <div class="voe-result-card voe-result-blue">
+          <span class="voe-result-label">Precio Final</span>
+          <span class="voe-result-value" id="manualFinal">$0</span>
+        </div>
+        <div class="voe-result-card voe-result-green">
+          <span class="voe-result-label">Ganancia Neta</span>
+          <span class="voe-result-value" id="manualProfit">$0</span>
+        </div>
+      </div>
+    </div>
+    <div class="voe-resize-handle"></div>
+  `;
+
+  div.querySelector('.voe-close').onclick = destroyPopup;
+
+  const state = {
+    net: 0,
+    passengers: cfg.passengers,
+    margin: cfg.margin,
+    bok: cfg.bok,
+    displayMode: 'total'
+  };
+
+  function updateManualCalc() {
+    if (!state.net || state.net <= 0) {
+      div.querySelector('#manualFinal').textContent = '$0';
+      div.querySelector('#manualProfit').textContent = '$0';
+      return;
+    }
+
+    const pct = state.margin + state.bok;
+    if (pct >= 100) {
+      div.querySelector('#manualFinal').textContent = 'Error';
+      div.querySelector('#manualProfit').textContent = '% > 100';
+      return;
+    }
+
+    const final = state.net / (1 - pct / 100);
+    const profit = final - state.net;
+
+    const isTotal = state.displayMode === 'total';
+    const showFinal = isTotal ? final : final / state.passengers;
+    const showProfit = isTotal ? profit : profit / state.passengers;
+
+    div.querySelector('#manualFinal').textContent = '$' + money(showFinal);
+    div.querySelector('#manualProfit').textContent = '$' + money(showProfit);
+
+    document.querySelectorAll('.voe-mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === state.displayMode);
+    });
+  }
+
+  div.querySelector('#manualNetInput').addEventListener('input', (e) => {
+    state.net = parseFloat(e.target.value) || 0;
+    updateManualCalc();
+  });
+
+  div.querySelectorAll('.voe-step-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.key;
+      const val = parseFloat(btn.dataset.v);
+      if (key === 'passengers') {
+        state.passengers = Math.max(1, state.passengers + val);
+        div.querySelector('#manualPax').value = state.passengers;
+      } else if (key === 'margin') {
+        state.margin = Math.max(0, parseFloat((state.margin + val).toFixed(1)));
+        div.querySelector('#manualMargin').value = state.margin;
+      } else if (key === 'bok') {
+        state.bok = Math.max(0, parseFloat((state.bok + val).toFixed(1)));
+        div.querySelector('#manualBok').value = state.bok;
+      }
+      updateManualCalc();
+    });
+  });
+
+  div.querySelectorAll('.voe-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.displayMode = btn.dataset.mode;
+      updateManualCalc();
+    });
+  });
+
+  popup = div;
+  document.body.appendChild(popup);
+  div.style.top = '100px';
+  div.style.left = '100px';
+  makeDraggable(div);
+  makeResizable(div);
+  document.addEventListener('keydown', onEsc);
+
+  setTimeout(() => div.querySelector('#manualNetInput').focus(), 100);
+}
 
 function parsePrice(text) {
   if (!text) return NaN;
@@ -214,29 +261,30 @@ function calc(net) {
   const final = net / (1 - pct / 100);
   return {
     net, pct, final,
-    finalPax : final / config.passengers,
-    profit   : final - net,
+    finalPax: final / config.passengers,
+    profit: final - net,
     profitPax: (final - net) / config.passengers,
-    pax      : config.passengers
+    pax: config.passengers
   };
 }
 
 function money(n) {
-  return isNaN(n) ? '—' : Math.round(n).toLocaleString('es-UY');
+  return isNaN(n) ? '0' : Math.round(n).toLocaleString('es-UY');
 }
 
-function refreshPopupData(net) {
+function refreshPopupData(net, activeConfig) {
   if (!popup) return;
   const body = popup.querySelector('.voe-body');
   if (!body) return;
   body.style.opacity = '0.3';
   setTimeout(() => {
-    renderPopupBody();
+    renderPopupBody(activeConfig);
     body.style.opacity = '1';
   }, 50);
 }
 
-function createPopup(net) {
+function createPopup(net, activeConfig = null) {
+  const cfg = activeConfig || config;
   const div = document.createElement('div');
   div.className = 'voe-popup';
   div.style.setProperty('--voe-scale', '1');
@@ -264,21 +312,22 @@ function createPopup(net) {
     if (!config.enabled) destroyPopup();
   };
   popup = div;
-  renderPopupBody();
+  renderPopupBody(activeConfig);
   return div;
 }
 
-function renderPopupBody() {
+function renderPopupBody(activeConfig = null) {
   if (!popup) return;
+  const cfg = activeConfig || config;
   const body = popup.querySelector('.voe-body');
   const d = calc(currentNet);
-  
+
   if (!d) {
     body.innerHTML = '<div class="voe-error-state">Suma de % excede 100%</div>';
     return;
   }
 
-  const isTotal = config.displayMode === 'total';
+  const isTotal = cfg.displayMode === 'total';
   const mainFinal = isTotal ? d.final : d.finalPax;
   const mainProfit = isTotal ? d.profit : d.profitPax;
 
@@ -292,7 +341,7 @@ function renderPopupBody() {
         <span class="voe-chip-label">Pasajeros</span>
         <div class="voe-input-group">
           <button class="voe-step" data-key="passengers" data-v="-1">-</button>
-          <input type="number" class="voe-manual" data-key="passengers" value="${config.passengers}" step="1" min="1">
+          <input type="number" class="voe-manual" data-key="passengers" value="${cfg.passengers}" step="1" min="1">
           <button class="voe-step" data-key="passengers" data-v="1">+</button>
         </div>
       </div>
@@ -308,7 +357,7 @@ function renderPopupBody() {
         <span class="voe-chip-label">Margen (%)</span>
         <div class="voe-input-group">
           <button class="voe-step" data-key="margin" data-v="-0.5">-</button>
-          <input type="number" class="voe-manual" data-key="margin" value="${config.margin}" step="0.1">
+          <input type="number" class="voe-manual" data-key="margin" value="${cfg.margin}" step="0.1">
           <button class="voe-step" data-key="margin" data-v="0.5">+</button>
         </div>
       </div>
@@ -316,7 +365,7 @@ function renderPopupBody() {
         <span class="voe-chip-label">Bok (%)</span>
         <div class="voe-input-group">
           <button class="voe-step" data-key="bok" data-v="-0.1">-</button>
-          <input type="number" class="voe-manual" data-key="bok" value="${config.bok}" step="0.1">
+          <input type="number" class="voe-manual" data-key="bok" value="${cfg.bok}" step="0.1">
           <button class="voe-step" data-key="bok" data-v="0.1">+</button>
         </div>
       </div>
@@ -360,7 +409,6 @@ function renderPopupBody() {
       if (val < 0) val = 0;
       config[key] = val;
       updateTotalsInUI();
-      
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => chrome.storage.sync.set(config), 600);
     };
@@ -370,8 +418,8 @@ function renderPopupBody() {
 function updateTotalsInUI() {
   const d = calc(currentNet);
   const isTotal = config.displayMode === 'total';
-  const finalEl = popup.querySelector('#voeFinalLabel');
-  const profitEl = popup.querySelector('#voeProfitLabel');
+  const finalEl = popup?.querySelector('#voeFinalLabel');
+  const profitEl = popup?.querySelector('#voeProfitLabel');
   if (d && finalEl && profitEl) {
     finalEl.textContent = `USD ${money(isTotal ? d.final : d.finalPax)}`;
     profitEl.textContent = `USD ${money(isTotal ? d.profit : d.profitPax)}`;
@@ -429,26 +477,11 @@ function destroyPopup() {
     popup.remove();
     popup = null;
     document.removeEventListener('keydown', onEsc);
-    console.log('[EM Flights] Popup destroyed');
   }
 }
 
 function onEsc(e) { if (e.key === 'Escape') destroyPopup(); }
 
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-  if (mutationObserver) {
-    mutationObserver.disconnect();
-  }
-  destroyPopup();
-});
-
-// Handle visibility changes (tab switching, etc.)
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    console.log('[EM Flights] Page hidden, cleaning up popup');
-    destroyPopup();
-  }
-});
+window.addEventListener('beforeunload', destroyPopup);
 
 init();
