@@ -63,9 +63,107 @@ function isGwcPage() {
 
 // Detección automática inteligente de cantidad de pasajeros en GWC (gwc.glas.travel)
 function detectGwcPassengers(priceEl) {
-  let detected = 0;
+  // Función auxiliar robusta para leer el valor numérico de un input en GWC
+  function readGwcInputValue(input, defaultVal) {
+    if (!input) return defaultVal;
+    // 1. Propiedad JavaScript directa (lo que el usuario tipeó o Blazor fijó en runtime)
+    if (input.value !== undefined && input.value !== null) {
+      const v = String(input.value).trim();
+      if (v !== '') {
+        const n = parseInt(v, 10);
+        if (!isNaN(n)) return n;
+      }
+    }
+    // 2. Atributo HTML value
+    const attr = input.getAttribute('value');
+    if (attr !== null && attr !== undefined && attr.trim() !== '') {
+      const n = parseInt(attr.trim(), 10);
+      if (!isNaN(n)) return n;
+    }
+    // 3. Atributo placeholder (ej. placeholder="1" para Adultos, placeholder="0" para Niños/Infants)
+    const ph = input.placeholder ? input.placeholder.trim() : '';
+    if (ph !== '') {
+      const n = parseInt(ph, 10);
+      if (!isNaN(n)) return n;
+    }
+    return defaultVal;
+  }
 
-  // 1. Detección en la URL (parámetros de consulta o ruta de búsqueda de GWC)
+  // 1. PRIORIDAD MÁXIMA: Formulario de búsqueda principal de GWC (Adultos, Niños, Infants)
+  // Estructura oficial de GWC:
+  // <div class="input-type ..."><div class="input-cont"><span class="floating-label">Adultos</span><input class="search-input" data-mask="00" placeholder="1"></div></div>
+  try {
+    let adults = null;
+    let children = null;
+    let infants = null;
+
+    // Método 1A: Recorrer contenedores .input-cont y .input-type
+    const conts = document.querySelectorAll('.input-cont, .input-type');
+    for (const cont of conts) {
+      if (cont.closest('.voe-popup')) continue;
+      const label = cont.querySelector('.floating-label, label, span');
+      const labelText = (label?.textContent || '').trim().toLowerCase();
+      const input = cont.querySelector('input');
+      if (!input) continue;
+
+      if (labelText.includes('adult')) {
+        adults = readGwcInputValue(input, 1);
+      } else if (labelText.includes('niñ') || labelText.includes('menor') || labelText.includes('child')) {
+        children = readGwcInputValue(input, 0);
+      } else if (labelText.includes('infant') || labelText.includes('bebé') || labelText.includes('bebe') || labelText.includes('inf')) {
+        infants = readGwcInputValue(input, 0);
+      }
+    }
+
+    // Método 1B: Buscar por etiquetas .floating-label directamente
+    if (adults === null) {
+      const labels = document.querySelectorAll('.floating-label, label');
+      for (const lbl of labels) {
+        if (lbl.closest('.voe-popup')) continue;
+        const txt = (lbl.textContent || '').trim().toLowerCase();
+        const parent = lbl.closest('.input-cont') || lbl.closest('.input-type') || lbl.parentElement;
+        const input = parent?.querySelector('input');
+        if (!input) continue;
+
+        if (txt.includes('adult') && adults === null) {
+          adults = readGwcInputValue(input, 1);
+        } else if ((txt.includes('niñ') || txt.includes('menor') || txt.includes('child')) && children === null) {
+          children = readGwcInputValue(input, 0);
+        } else if ((txt.includes('infant') || txt.includes('bebé') || txt.includes('inf')) && infants === null) {
+          infants = readGwcInputValue(input, 0);
+        }
+      }
+    }
+
+    // Método 1C: Buscar inputs específicos de pasajeros en GWC con data-mask="00" o .search-input
+    if (adults === null) {
+      const maskedInputs = document.querySelectorAll('input[data-mask="00"], input.search-input');
+      for (const inp of maskedInputs) {
+        if (inp.closest('.voe-popup')) continue;
+        const parent = inp.closest('.input-cont') || inp.closest('.input-type') || inp.parentElement;
+        const pText = (parent?.innerText || parent?.textContent || '').toLowerCase();
+        if (pText.includes('adult') && adults === null) {
+          adults = readGwcInputValue(inp, 1);
+        } else if ((pText.includes('niñ') || pText.includes('menor')) && children === null) {
+          children = readGwcInputValue(inp, 0);
+        } else if (pText.includes('infant') && infants === null) {
+          infants = readGwcInputValue(inp, 0);
+        }
+      }
+    }
+
+    if (adults !== null || children !== null || infants !== null) {
+      const sum = (adults !== null ? adults : 1) + (children || 0) + (infants || 0);
+      if (sum > 0 && sum <= 30) {
+        console.log(`[EM Flights] Pasajeros detectados en GWC search form: Adultos=${adults}, Niños=${children}, Infants=${infants} => Total=${sum}`);
+        return sum;
+      }
+    }
+  } catch (err) {
+    console.warn('[EM Flights] Error analizando inputs de pasajeros en GWC:', err);
+  }
+
+  // 2. Detección en la URL (parámetros de consulta o segmentos de ruta)
   try {
     const rawSearch = window.location.search || (window.location.hash.includes('?') ? window.location.hash.substring(window.location.hash.indexOf('?')) : '');
     const params = new URLSearchParams(rawSearch);
@@ -74,41 +172,32 @@ function detectGwcPassengers(priceEl) {
     const directKeys = ['passengers', 'pax', 'totalpax', 'travelers', 'pasajeros', 'cantpax', 'qty'];
     for (const k of directKeys) {
       const val = parseInt(params.get(k), 10);
-      if (val > 0 && val <= 30) {
-        detected = val;
-        break;
-      }
+      if (val > 0 && val <= 30) return val;
     }
 
     // Búsqueda de suma de adultos + menores + infantes en URL
-    if (!detected) {
-      const adt = parseInt(params.get('adults') || params.get('adultos') || params.get('adt') || params.get('adult') || '0', 10);
-      const chd = parseInt(params.get('children') || params.get('menores') || params.get('chd') || params.get('child') || params.get('kids') || '0', 10);
-      const inf = parseInt(params.get('infants') || params.get('inf') || params.get('infant') || params.get('bebes') || '0', 10);
-      const sum = adt + chd + inf;
-      if (sum > 0 && sum <= 30) {
-        detected = sum;
-      }
-    }
+    const adt = parseInt(params.get('adults') || params.get('adultos') || params.get('adt') || params.get('adult') || '0', 10);
+    const chd = parseInt(params.get('children') || params.get('menores') || params.get('chd') || params.get('child') || params.get('kids') || '0', 10);
+    const inf = parseInt(params.get('infants') || params.get('inf') || params.get('infant') || params.get('bebes') || '0', 10);
+    const sum = adt + chd + inf;
+    if (sum > 0 && sum <= 30) return sum;
 
-    // Análisis de segmentos en la ruta de búsqueda (ej. /search/MVD/MIA/2026-11-20/2/0/0)
-    if (!detected && window.location.pathname) {
+    // Segmentos en la ruta (ej. /search/MVD/MIA/2026-11-20/2/0/0)
+    if (window.location.pathname) {
       const parts = window.location.pathname.split('/').filter(Boolean);
       for (let i = 0; i < parts.length; i++) {
         if (/^\d{4}-\d{2}-\d{2}$/.test(parts[i]) && parts[i + 1] && /^[1-9]$/.test(parts[i + 1])) {
           const adtSeg = parseInt(parts[i + 1], 10);
           const chdSeg = parseInt(parts[i + 2], 10) || 0;
           const infSeg = parseInt(parts[i + 3], 10) || 0;
-          detected = adtSeg + chdSeg + infSeg;
-          break;
+          const segTotal = adtSeg + chdSeg + infSeg;
+          if (segTotal > 0 && segTotal <= 30) return segTotal;
         }
       }
     }
   } catch (_) {}
 
-  if (detected > 0) return detected;
-
-  // 2. Detección en la tarjeta del vuelo actual (contenedor del precio clicado)
+  // 3. Detección en la tarjeta del vuelo actual (contenedor del precio clicado)
   if (priceEl) {
     const card = priceEl.closest('.flight-item') ||
                  priceEl.closest('[class*="flight-item"]') ||
@@ -121,17 +210,17 @@ function detectGwcPassengers(priceEl) {
 
     if (card) {
       const cardText = card.innerText || card.textContent || '';
-      // Formato desglosado primero: "2 Adultos, 1 Niño"
-      const adtM = cardText.match(/(\d+)\s*(?:adulto|adt|adult)s?/i);
-      const chdM = cardText.match(/(\d+)\s*(?:niño|menor|chd|child)s?/i);
-      const infM = cardText.match(/(\d+)\s*(?:bebé|infante|inf)s?/i);
+      const adtM = cardText.match(/(\d+)\s*(?:adulto|adt|adult)s?/i) || cardText.match(/(?:adulto|adt|adult)s?[:\s]*(\d+)/i);
+      const chdM = cardText.match(/(\d+)\s*(?:niño|menor|chd|child)s?/i) || cardText.match(/(?:niño|menor|chd|child)s?[:\s]*(\d+)/i);
+      const infM = cardText.match(/(\d+)\s*(?:bebé|infante|inf)s?/i) || cardText.match(/(?:bebé|infante|inf)s?[:\s]*(\d+)/i);
       if (adtM || chdM || infM) {
         const sum = (adtM ? parseInt(adtM[1], 10) : 0) +
                     (chdM ? parseInt(chdM[1], 10) : 0) +
                     (infM ? parseInt(infM[1], 10) : 0);
         if (sum > 0 && sum <= 30) return sum;
       }
-      const match = cardText.match(/(\d+)\s*(?:pasajero|pax|viajero|persona)s?/i);
+      const match = cardText.match(/(\d+)\s*(?:pasajero|pax|viajero|persona)s?/i) ||
+                    cardText.match(/(?:pasajero|pax|viajero|persona)s?[:\s]*(\d+)/i);
       if (match) {
         const val = parseInt(match[1], 10);
         if (val > 0 && val <= 30) return val;
@@ -139,61 +228,29 @@ function detectGwcPassengers(priceEl) {
     }
   }
 
-  // 3. Detección en la barra de búsqueda y encabezados de GWC (Blazor UI)
-  const selectors = [
-    '[class*="passenger"]',
-    '[class*="pax"]',
-    '[class*="traveler"]',
-    '[class*="search-summary"]',
-    '[class*="flight-search"]',
-    '[class*="filter"]',
-    'header',
-    'nav',
-    'button',
-    'input[type="number"]'
-  ];
+  // 4. Escaneo de texto en el encabezado de la página (tanto "Adultos 2" como "2 Adultos")
+  try {
+    const topText = (document.body?.innerText || '').substring(0, 4000);
+    const lblFirstAdt = topText.match(/Adultos?[:\s\n\r]+(\d+)/i);
+    const lblFirstChd = topText.match(/Niños?[:\s\n\r]+(\d+)/i);
+    const lblFirstInf = topText.match(/Infants?[:\s\n\r]+(\d+)/i);
+    if (lblFirstAdt) {
+      const a = parseInt(lblFirstAdt[1], 10) || 0;
+      const c = lblFirstChd ? parseInt(lblFirstChd[1], 10) || 0 : 0;
+      const i = lblFirstInf ? parseInt(lblFirstInf[1], 10) || 0 : 0;
+      const tot = a + c + i;
+      if (tot > 0 && tot <= 30) return tot;
+    }
 
-  for (const sel of selectors) {
-    try {
-      const elements = document.querySelectorAll(sel);
-      for (const el of elements) {
-        if (el.closest('.voe-popup')) continue;
+    const numFirstMatch = topText.match(/(\d+)\s*(?:Adulto|Pasajero|Viajero)s?(?:\s*[,·+]\s*(\d+)\s*(?:Niño|Menor)s?)?/i);
+    if (numFirstMatch) {
+      const ad = parseInt(numFirstMatch[1], 10) || 0;
+      const ch = parseInt(numFirstMatch[2], 10) || 0;
+      if (ad + ch > 0 && ad + ch <= 30) return ad + ch;
+    }
+  } catch (_) {}
 
-        // Si es un input numérico con nombre o id relacionado con pax
-        if (el.tagName === 'INPUT') {
-          const nameAttr = (el.name || el.id || el.className || '').toLowerCase();
-          if (nameAttr.includes('pax') || nameAttr.includes('adult') || nameAttr.includes('passenger') || nameAttr.includes('viajero')) {
-            const val = parseInt(el.value, 10);
-            if (val > 0 && val <= 30) return val;
-          }
-        }
-
-        const txt = (el.innerText || el.textContent || el.getAttribute('aria-label') || '').trim();
-        if (!txt) continue;
-
-        // Formato detallado: ej "2 Adultos, 1 Niño" o "2 Adt · 1 Chd"
-        const adtM = txt.match(/(\d+)\s*(?:adulto|adt|adult)s?/i);
-        const chdM = txt.match(/(\d+)\s*(?:niño|menor|chd|child)s?/i);
-        const infM = txt.match(/(\d+)\s*(?:bebé|infante|inf)s?/i);
-
-        if (adtM || chdM || infM) {
-          const sum = (adtM ? parseInt(adtM[1], 10) : 0) +
-                      (chdM ? parseInt(chdM[1], 10) : 0) +
-                      (infM ? parseInt(infM[1], 10) : 0);
-          if (sum > 0 && sum <= 30) return sum;
-        }
-
-        // Formato directo: ej "2 Pasajeros", "3 Pax", "2 Viajeros"
-        const genM = txt.match(/(\d+)\s*(?:pasajero|pax|viajero|persona)s?/i);
-        if (genM) {
-          const val = parseInt(genM[1], 10);
-          if (val > 0 && val <= 30) return val;
-        }
-      }
-    } catch (_) {}
-  }
-
-  // 4. Detección en sessionStorage / localStorage (criterios de búsqueda almacenados en Blazor)
+  // 5. Almacenamiento local / sesión de Blazor
   try {
     const storages = [sessionStorage, localStorage];
     for (const st of storages) {
@@ -217,17 +274,6 @@ function detectGwcPassengers(priceEl) {
           }
         }
       }
-    }
-  } catch (_) {}
-
-  // 5. Escaneo por expresiones regulares en el texto superior de la página
-  try {
-    const topText = (document.body?.innerText || '').substring(0, 3000);
-    const broadMatch = topText.match(/(\d+)\s*(?:Adulto|Pasajero|Viajero)s?(?:\s*[,·+]\s*(\d+)\s*(?:Niño|Menor)s?)?/i);
-    if (broadMatch) {
-      const ad = parseInt(broadMatch[1], 10) || 0;
-      const ch = parseInt(broadMatch[2], 10) || 0;
-      if (ad + ch > 0 && ad + ch <= 30) return ad + ch;
     }
   } catch (_) {}
 
@@ -296,6 +342,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 function showCalculator(netValue, mode = 'manual') {
   currentNet = netValue || 0;
   currentMode = mode;
+
+  // Si estamos en GWC, detectar pasajeros automáticamente si no han sido ajustados manualmente
+  if (isGwcPage()) {
+    const detected = detectGwcPassengers();
+    if (detected > 0) {
+      config.passengers = detected;
+    }
+  }
 
   if (popup && popup.isConnected) {
     const priceInput = popup.querySelector('#voeNetPrice');
