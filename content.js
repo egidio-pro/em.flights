@@ -1,31 +1,28 @@
 /* ================================================================
-   EM FLIGHTS – content.js  v1.4.0 (GWC + Manual Calc)
+   EM FLIGHTS – content.js  v2.1.2 (Unified Light Mode Calculator)
    ================================================================ */
 
 'use strict';
 
-const POPUP_W = 290;
-const POPUP_H_EST = 340;
-const PAD = 12;
+const POPUP_W = 320;
+const POPUP_H_EST = 400;
+const PAD = 14;
 
 let config = { passengers: 1, margin: 10, bok: 0.8, enabled: true, displayMode: 'total' };
 let popup = null;
-let currentNet = null;
+let currentNet = 0;
 let saveTimer = null;
 
 async function init() {
-  console.log('[EM Flights] Starting v1.4.0...');
+  console.log('[EM Flights] Starting v2.1.2...');
 
   try {
-    const st = await chrome.storage.sync.get({ passengers:1, margin:10, bok:0.8, enabled:true, displayMode:'total' });
+    const st = await chrome.storage.sync.get({ passengers: 1, margin: 10, bok: 0.8, enabled: true, displayMode: 'total' });
     config = { ...config, ...st };
 
     document.addEventListener('click', onDocClick, true);
     console.log('[EM Flights] Click listener active');
-
-    setTimeout(scanPrices, 1500);
-
-  } catch(e) {
+  } catch (e) {
     console.error('[EM Flights] Init error:', e);
     setTimeout(init, 1000);
   }
@@ -36,7 +33,6 @@ function onDocClick(e) {
   if (e.target.closest('.voe-popup')) return;
 
   const target = e.target;
-
   let priceEl = null;
 
   if (target.tagName === 'STRONG' && target.classList.contains('priceNumb')) {
@@ -49,42 +45,14 @@ function onDocClick(e) {
   }
 
   if (priceEl) {
-    console.log('[EM Flights] Price clicked:', priceEl.textContent);
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
-    showPopup(priceEl);
+    const net = parsePrice(priceEl.textContent.trim());
+    if (!isNaN(net) && net > 0) {
+      showCalculator(net, priceEl);
+    }
   }
-}
-
-function showPopup(priceEl, manualConfig = null) {
-  const rect = priceEl.getBoundingClientRect();
-  const text = priceEl.textContent.trim();
-  const net = parsePrice(text);
-
-  console.log('[EM Flights] Parsed:', text, '->', net);
-
-  if (isNaN(net) || net <= 0) return;
-
-  const activeConfig = manualConfig || config;
-
-  if (popup && popup.isConnected) {
-    currentNet = net;
-    refreshPopupData(net, activeConfig);
-  } else {
-    currentNet = net;
-    popup = createPopup(net, activeConfig);
-    document.body.appendChild(popup);
-    positionPopup(popup, rect);
-    makeDraggable(popup);
-    makeResizable(popup);
-    document.addEventListener('keydown', onEsc);
-  }
-}
-
-function scanPrices() {
-  const prices = document.querySelectorAll('strong.priceNumb');
-  console.log('[EM Flights] Found', prices.length, 'prices');
 }
 
 chrome.runtime.onMessage.addListener((msg, sender) => {
@@ -93,155 +61,305 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg.type === 'TOGGLE_STATE') {
     config.enabled = msg.enabled;
     if (!config.enabled && popup) destroyPopup();
-  }
-  else if (msg.type === 'OPEN_MANUAL_CALC') {
-    console.log('[EM Flights] Opening manual calculator');
+  } else if (msg.type === 'OPEN_MANUAL_CALC') {
     config = { ...config, ...msg.config };
-    showManualCalc(msg.config);
+    showCalculator(currentNet || 0, null);
   }
 });
 
-function showManualCalc(cfg) {
-  destroyPopup();
+function showCalculator(netValue, anchorEl = null) {
+  currentNet = netValue || 0;
 
+  if (popup && popup.isConnected) {
+    const priceInput = popup.querySelector('#voeNetPrice');
+    if (priceInput) priceInput.value = currentNet > 0 ? currentNet : '';
+    updateCalculatorUI();
+    return;
+  }
+
+  popup = renderCalculatorDOM(currentNet);
+  document.body.appendChild(popup);
+
+  if (anchorEl) {
+    positionNear(popup, anchorEl.getBoundingClientRect());
+  } else {
+    popup.style.top = '90px';
+    popup.style.left = `${Math.max(20, (window.innerWidth - POPUP_W) / 2)}px`;
+  }
+
+  makeDraggable(popup);
+  makeResizable(popup);
+  document.addEventListener('keydown', onEsc);
+
+  // Focus price field if opened manually with 0
+  if (!netValue || netValue <= 0) {
+    setTimeout(() => {
+      const field = popup.querySelector('#voeNetPrice');
+      if (field) field.focus();
+    }, 100);
+  }
+}
+
+function renderCalculatorDOM(initialNet) {
   const div = document.createElement('div');
-  div.className = 'voe-popup voe-manual-popup';
+  div.className = 'voe-popup';
   div.style.setProperty('--voe-scale', '1');
+
   div.innerHTML = `
     <div class="voe-header">
       <div class="voe-brand">
         <img class="voe-brand-icon" src="${chrome.runtime.getURL('icons/icon48.png')}" alt="Logo">
-        <span class="voe-brand-name">EM Flights - Calculadora</span>
+        <span class="voe-brand-name">EM Flights</span>
       </div>
-      <button class="voe-close">✕</button>
+      <button class="voe-close" title="Cerrar [ESC]">✕</button>
     </div>
+
     <div class="voe-body">
-      <div class="voe-input-price">
-        <label class="voe-price-label">Precio Neto (USD)</label>
-        <input type="number" id="manualNetInput" class="voe-price-field" placeholder="0.00" step="0.01" value="">
-      </div>
-      <div class="voe-settings-row">
-        <div class="voe-setting-item">
-          <label>Pasajeros</label>
-          <div class="voe-step-group">
-            <button class="voe-step-btn" data-key="passengers" data-v="-1">-</button>
-            <input type="number" id="manualPax" value="${cfg.passengers}" min="1" step="1">
-            <button class="voe-step-btn" data-key="passengers" data-v="1">+</button>
-          </div>
+      <!-- Tarifa Neta GWC -->
+      <div class="voe-price-box">
+        <div class="voe-price-box-header">
+          <span class="voe-price-label">Tarifa Neta (GWC)</span>
+          <span class="voe-price-tag">Cálculo en vivo</span>
         </div>
-        <div class="voe-setting-item">
-          <label>Margen %</label>
-          <div class="voe-step-group">
-            <button class="voe-step-btn" data-key="margin" data-v="-0.5">-</button>
-            <input type="number" id="manualMargin" value="${cfg.margin}" step="0.1" min="0">
-            <button class="voe-step-btn" data-key="margin" data-v="0.5">+</button>
-          </div>
-        </div>
-        <div class="voe-setting-item">
-          <label>Bok %</label>
-          <div class="voe-step-group">
-            <button class="voe-step-btn" data-key="bok" data-v="-0.1">-</button>
-            <input type="number" id="manualBok" value="${cfg.bok}" step="0.1" min="0">
-            <button class="voe-step-btn" data-key="bok" data-v="0.1">+</button>
-          </div>
+        <div class="voe-price-input-row">
+          <span class="voe-currency-sym">USD</span>
+          <input type="text" id="voeNetPrice" class="voe-price-field"
+                 placeholder="0.00" value="${initialNet > 0 ? initialNet : ''}" inputmode="decimal">
         </div>
       </div>
-      <div class="voe-mode-switcher">
-        <button class="voe-mode-btn active" data-mode="total">Total</button>
-        <button class="voe-mode-btn" data-mode="pax">Por Pax</button>
+
+      <!-- Pasajeros -->
+      <div class="voe-setting-row">
+        <span class="voe-setting-label">Pasajeros</span>
+        <div class="voe-step-group">
+          <button class="voe-step-btn" data-field="passengers" data-step="-1">−</button>
+          <input type="number" id="voePaxInput" class="voe-step-input" value="${config.passengers}" min="1" step="1">
+          <button class="voe-step-btn" data-field="passengers" data-step="1">+</button>
+        </div>
       </div>
+
+      <!-- Margen % -->
+      <div class="voe-setting-row">
+        <span class="voe-setting-label">Margen (%)</span>
+        <div class="voe-step-group">
+          <button class="voe-step-btn" data-field="margin" data-step="-0.5">−</button>
+          <input type="number" id="voeMarginInput" class="voe-step-input" value="${config.margin}" step="0.5" min="0">
+          <button class="voe-step-btn" data-field="margin" data-step="0.5">+</button>
+        </div>
+      </div>
+
+      <!-- Presets de Margen rápido -->
+      <div class="voe-presets">
+        <button class="voe-preset-btn" data-preset="8">8%</button>
+        <button class="voe-preset-btn" data-preset="10">10%</button>
+        <button class="voe-preset-btn" data-preset="12">12%</button>
+        <button class="voe-preset-btn" data-preset="15">15%</button>
+      </div>
+
+      <!-- Bok % -->
+      <div class="voe-setting-row">
+        <span class="voe-setting-label">Bok / Fee (%)</span>
+        <div class="voe-step-group">
+          <button class="voe-step-btn" data-field="bok" data-step="-0.1">−</button>
+          <input type="number" id="voeBokInput" class="voe-step-input" value="${config.bok}" step="0.1" min="0">
+          <button class="voe-step-btn" data-field="bok" data-step="0.1">+</button>
+        </div>
+      </div>
+
+      <!-- Conmutador Total / Pax -->
+      <div class="voe-switcher">
+        <button class="voe-switch-btn ${config.displayMode === 'total' ? 'active' : ''}" data-mode="total">Total</button>
+        <button class="voe-switch-btn ${config.displayMode === 'pax' ? 'active' : ''}" data-mode="pax">Por Pasajero</button>
+      </div>
+
+      <!-- Tarjetas de Resultado -->
       <div class="voe-results">
-        <div class="voe-result-card voe-result-blue">
-          <span class="voe-result-label">Precio Final</span>
-          <span class="voe-result-value" id="manualFinal">$0</span>
+        <div class="voe-card voe-card-blue" id="voeFinalCard" title="Clic para copiar">
+          <div class="voe-card-content">
+            <div class="voe-card-title">Precio final al cliente <span id="voeModeLabel">(${config.displayMode === 'total' ? 'Total' : 'Pax'})</span></div>
+            <div class="voe-card-main" id="voeFinalLabel">USD 0</div>
+          </div>
+          <button class="voe-copy-btn" id="voeCopyBtn" title="Copiar cotización">
+            📋 Copiar
+          </button>
         </div>
-        <div class="voe-result-card voe-result-green">
-          <span class="voe-result-label">Ganancia Neta</span>
-          <span class="voe-result-value" id="manualProfit">$0</span>
+
+        <div class="voe-card voe-card-green">
+          <div class="voe-card-content">
+            <div class="voe-card-title">Ganancia neta <span id="voeProfitModeLabel">(${config.displayMode === 'total' ? 'Total' : 'Pax'})</span></div>
+            <div class="voe-card-main" id="voeProfitLabel">USD 0</div>
+          </div>
         </div>
+      </div>
+
+      <div class="voe-footnote" id="voeFootnote">
+        Margen total: 10.8% · Fórm.: Neto ÷ (1 - 0.108)
       </div>
     </div>
-    <div class="voe-resize-handle"></div>
+    <div class="voe-resize-handle" title="Arrastra para redimensionar"></div>
   `;
 
+  // Cerrar
   div.querySelector('.voe-close').onclick = destroyPopup;
 
-  const state = {
-    net: 0,
-    passengers: cfg.passengers,
-    margin: cfg.margin,
-    bok: cfg.bok,
-    displayMode: 'total'
-  };
-
-  function updateManualCalc() {
-    if (!state.net || state.net <= 0) {
-      div.querySelector('#manualFinal').textContent = '$0';
-      div.querySelector('#manualProfit').textContent = '$0';
-      return;
-    }
-
-    const pct = state.margin + state.bok;
-    if (pct >= 100) {
-      div.querySelector('#manualFinal').textContent = 'Error';
-      div.querySelector('#manualProfit').textContent = '% > 100';
-      return;
-    }
-
-    const final = state.net / (1 - pct / 100);
-    const profit = final - state.net;
-
-    const isTotal = state.displayMode === 'total';
-    const showFinal = isTotal ? final : final / state.passengers;
-    const showProfit = isTotal ? profit : profit / state.passengers;
-
-    div.querySelector('#manualFinal').textContent = '$' + money(showFinal);
-    div.querySelector('#manualProfit').textContent = '$' + money(showProfit);
-
-    document.querySelectorAll('.voe-mode-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.mode === state.displayMode);
-    });
-  }
-
-  div.querySelector('#manualNetInput').addEventListener('input', (e) => {
-    state.net = parseFloat(e.target.value) || 0;
-    updateManualCalc();
+  // Entrada de precio en vivo
+  const priceInput = div.querySelector('#voeNetPrice');
+  priceInput.addEventListener('input', (e) => {
+    currentNet = parsePrice(e.target.value) || 0;
+    updateCalculatorUI();
   });
 
+  // Botones +/-
   div.querySelectorAll('.voe-step-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const key = btn.dataset.key;
-      const val = parseFloat(btn.dataset.v);
-      if (key === 'passengers') {
-        state.passengers = Math.max(1, state.passengers + val);
-        div.querySelector('#manualPax').value = state.passengers;
-      } else if (key === 'margin') {
-        state.margin = Math.max(0, parseFloat((state.margin + val).toFixed(1)));
-        div.querySelector('#manualMargin').value = state.margin;
-      } else if (key === 'bok') {
-        state.bok = Math.max(0, parseFloat((state.bok + val).toFixed(1)));
-        div.querySelector('#manualBok').value = state.bok;
+      const field = btn.dataset.field;
+      const step = parseFloat(btn.dataset.step);
+      if (field === 'passengers') {
+        config.passengers = Math.max(1, config.passengers + step);
+        div.querySelector('#voePaxInput').value = config.passengers;
+      } else if (field === 'margin') {
+        config.margin = Math.max(0, parseFloat((config.margin + step).toFixed(2)));
+        div.querySelector('#voeMarginInput').value = config.margin;
+      } else if (field === 'bok') {
+        config.bok = Math.max(0, parseFloat((config.bok + step).toFixed(2)));
+        div.querySelector('#voeBokInput').value = config.bok;
       }
-      updateManualCalc();
+      persistConfig();
+      updateCalculatorUI();
     });
   });
 
-  div.querySelectorAll('.voe-mode-btn').forEach(btn => {
+  // Entradas numéricas directas
+  div.querySelector('#voePaxInput').addEventListener('input', (e) => {
+    config.passengers = Math.max(1, parseInt(e.target.value) || 1);
+    persistConfig();
+    updateCalculatorUI();
+  });
+  div.querySelector('#voeMarginInput').addEventListener('input', (e) => {
+    config.margin = Math.max(0, parseFloat(e.target.value) || 0);
+    persistConfig();
+    updateCalculatorUI();
+  });
+  div.querySelector('#voeBokInput').addEventListener('input', (e) => {
+    config.bok = Math.max(0, parseFloat(e.target.value) || 0);
+    persistConfig();
+    updateCalculatorUI();
+  });
+
+  // Presets de margen
+  div.querySelectorAll('.voe-preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      state.displayMode = btn.dataset.mode;
-      updateManualCalc();
+      config.margin = parseFloat(btn.dataset.preset);
+      div.querySelector('#voeMarginInput').value = config.margin;
+      persistConfig();
+      updateCalculatorUI();
     });
   });
 
-  popup = div;
-  document.body.appendChild(popup);
-  div.style.top = '100px';
-  div.style.left = '100px';
-  makeDraggable(div);
-  makeResizable(div);
-  document.addEventListener('keydown', onEsc);
+  // Conmutador Total vs Pax
+  div.querySelectorAll('.voe-switch-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      config.displayMode = btn.dataset.mode;
+      div.querySelectorAll('.voe-switch-btn').forEach(b => b.classList.toggle('active', b === btn));
+      persistConfig();
+      updateCalculatorUI();
+    });
+  });
 
-  setTimeout(() => div.querySelector('#manualNetInput').focus(), 100);
+  // Copiar cotización
+  const copyBtn = div.querySelector('#voeCopyBtn');
+  const copyCard = div.querySelector('#voeFinalCard');
+  copyBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    copyQuotation();
+  });
+  copyCard.addEventListener('click', (e) => {
+    if (e.target.closest('#voeCopyBtn')) return;
+    copyQuotation();
+  });
+
+  updateCalculatorUI(div);
+  return div;
+}
+
+function updateCalculatorUI(targetEl = popup) {
+  if (!targetEl) return;
+  const d = calc(currentNet);
+
+  const finalLabel = targetEl.querySelector('#voeFinalLabel');
+  const profitLabel = targetEl.querySelector('#voeProfitLabel');
+  const modeLabel = targetEl.querySelector('#voeModeLabel');
+  const profitModeLabel = targetEl.querySelector('#voeProfitModeLabel');
+  const footnote = targetEl.querySelector('#voeFootnote');
+
+  const isTotal = config.displayMode === 'total';
+  const modeText = `(${isTotal ? 'Total' : 'Pax'})`;
+
+  if (modeLabel) modeLabel.textContent = modeText;
+  if (profitModeLabel) profitModeLabel.textContent = modeText;
+
+  if (!d) {
+    if (finalLabel) finalLabel.textContent = 'Error: % ≥ 100';
+    if (profitLabel) profitLabel.textContent = '—';
+    if (footnote) footnote.textContent = 'La suma de Margen y Bok no puede superar el 100%';
+    return;
+  }
+
+  const showFinal = isTotal ? d.final : d.finalPax;
+  const showProfit = isTotal ? d.profit : d.profitPax;
+
+  if (finalLabel) finalLabel.textContent = `USD ${money(showFinal)}`;
+  if (profitLabel) profitLabel.textContent = `USD ${money(showProfit)}`;
+  if (footnote) {
+    footnote.textContent = `Margen total: ${d.pct.toFixed(1)}% · Fórmula: Neto ÷ (1 - ${(d.pct / 100).toFixed(3)})`;
+  }
+}
+
+function copyQuotation() {
+  const d = calc(currentNet);
+  if (!d) return;
+
+  const isTotal = config.displayMode === 'total';
+  const price = isTotal ? d.final : d.finalPax;
+  const paxText = config.passengers > 1
+    ? (isTotal ? `Total para ${config.passengers} pasajeros` : `Por pasajero (grupo de ${config.passengers})`)
+    : '1 pasajero';
+
+  const text = `✈️ Cotización de Vuelo: USD ${money(price)} (${paxText})`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(showCopiedFeedback).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showCopiedFeedback();
+  } catch (err) {}
+  document.body.removeChild(ta);
+}
+
+function showCopiedFeedback() {
+  const copyBtn = popup?.querySelector('#voeCopyBtn');
+  if (copyBtn) {
+    copyBtn.textContent = '✓ ¡Copiado!';
+    copyBtn.classList.add('copied');
+    setTimeout(() => {
+      if (copyBtn) {
+        copyBtn.textContent = '📋 Copiar';
+        copyBtn.classList.remove('copied');
+      }
+    }, 1800);
+  }
 }
 
 function parsePrice(text) {
@@ -272,6 +390,7 @@ function parsePrice(text) {
 }
 
 function calc(net) {
+  if (!net || net <= 0) return { net: 0, pct: config.margin + config.bok, final: 0, finalPax: 0, profit: 0, profitPax: 0, pax: config.passengers };
   const pct = config.margin + config.bok;
   if (pct >= 100) return null;
   const final = net / (1 - pct / 100);
@@ -288,167 +407,19 @@ function money(n) {
   return isNaN(n) ? '0' : Math.round(n).toLocaleString('es-UY');
 }
 
-function refreshPopupData(net, activeConfig) {
-  if (!popup) return;
-  const body = popup.querySelector('.voe-body');
-  if (!body) return;
-  body.style.opacity = '0.3';
-  setTimeout(() => {
-    renderPopupBody(activeConfig);
-    body.style.opacity = '1';
-  }, 50);
-}
-
-function createPopup(net, activeConfig = null) {
-  const cfg = activeConfig || config;
-  const div = document.createElement('div');
-  div.className = 'voe-popup';
-  div.style.setProperty('--voe-scale', '1');
-  div.innerHTML = `
-    <div class="voe-header">
-      <div class="voe-brand">
-        <img class="voe-brand-icon" src="${chrome.runtime.getURL('icons/icon48.png')}" alt="Logo">
-        <span class="voe-brand-name">EM Flights</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <label class="voe-switch">
-          <input type="checkbox" id="voeGlobalToggle" ${config.enabled ? 'checked' : ''}>
-          <span class="voe-slider"></span>
-        </label>
-        <button class="voe-close">✕</button>
-      </div>
-    </div>
-    <div class="voe-body"></div>
-    <div class="voe-resize-handle"></div>
-  `;
-  div.querySelector('.voe-close').onclick = destroyPopup;
-  div.querySelector('#voeGlobalToggle').onchange = (e) => {
-    config.enabled = e.target.checked;
-    chrome.storage.sync.set({ enabled: config.enabled });
-    if (!config.enabled) destroyPopup();
-  };
-  popup = div;
-  renderPopupBody(activeConfig);
-  return div;
-}
-
-function renderPopupBody(activeConfig = null) {
-  if (!popup) return;
-  const cfg = activeConfig || config;
-  const body = popup.querySelector('.voe-body');
-  const d = calc(currentNet);
-
-  if (!d) {
-    body.innerHTML = '<div class="voe-error-state">Suma de % excede 100%</div>';
-    return;
-  }
-
-  const isTotal = cfg.displayMode === 'total';
-  const mainFinal = isTotal ? d.final : d.finalPax;
-  const mainProfit = isTotal ? d.profit : d.profitPax;
-
-  body.innerHTML = `
-    <div class="voe-info-row">
-      <div class="voe-info-chip">
-        <span class="voe-chip-label">Neto GWC</span>
-        <span class="voe-chip-value">USD ${money(d.net)}</span>
-      </div>
-      <div class="voe-info-chip">
-        <span class="voe-chip-label">Pasajeros</span>
-        <div class="voe-input-group">
-          <button class="voe-step" data-key="passengers" data-v="-1">-</button>
-          <input type="number" class="voe-manual" data-key="passengers" value="${cfg.passengers}" step="1" min="1">
-          <button class="voe-step" data-key="passengers" data-v="1">+</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="voe-switcher">
-      <button class="voe-switch-btn ${isTotal ? 'active' : ''}" data-m="total">Total</button>
-      <button class="voe-switch-btn ${!isTotal ? 'active' : ''}" data-m="pax">Por Pax</button>
-    </div>
-
-    <div class="voe-info-row">
-      <div class="voe-info-chip">
-        <span class="voe-chip-label">Margen (%)</span>
-        <div class="voe-input-group">
-          <button class="voe-step" data-key="margin" data-v="-0.5">-</button>
-          <input type="number" class="voe-manual" data-key="margin" value="${cfg.margin}" step="0.1">
-          <button class="voe-step" data-key="margin" data-v="0.5">+</button>
-        </div>
-      </div>
-      <div class="voe-info-chip">
-        <span class="voe-chip-label">Bok (%)</span>
-        <div class="voe-input-group">
-          <button class="voe-step" data-key="bok" data-v="-0.1">-</button>
-          <input type="number" class="voe-manual" data-key="bok" value="${cfg.bok}" step="0.1">
-          <button class="voe-step" data-key="bok" data-v="0.1">+</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="voe-card voe-card-blue">
-      <div class="voe-card-title">Precio final al cliente <span style="font-weight:400">(${isTotal ? 'Total' : 'Pax'})</span></div>
-      <div class="voe-card-main" id="voeFinalLabel">USD ${money(mainFinal)}</div>
-    </div>
-
-    <div class="voe-card voe-card-green">
-      <div class="voe-card-title">Ganancia neta <span style="font-weight:400">(${isTotal ? 'Total' : 'Pax'})</span></div>
-      <div class="voe-card-main" id="voeProfitLabel">USD ${money(mainProfit)}</div>
-    </div>
-  `;
-
-  body.querySelectorAll('.voe-switch-btn').forEach(b => {
-    b.onclick = () => {
-      config.displayMode = b.dataset.m;
-      chrome.storage.sync.set({ displayMode: config.displayMode });
-      renderPopupBody();
-    };
-  });
-
-  body.querySelectorAll('.voe-step').forEach(b => {
-    b.onclick = () => {
-      const key = b.dataset.key;
-      const val = parseFloat(b.dataset.v);
-      config[key] = Math.max(0, parseFloat((config[key] + val).toFixed(2)));
-      if (key === 'passengers') config[key] = Math.max(1, config[key]);
-      saveAndRefresh();
-    };
-  });
-
-  body.querySelectorAll('.voe-manual').forEach(input => {
-    input.oninput = (e) => {
-      const key = input.dataset.key;
-      let val = parseFloat(e.target.value);
-      if (isNaN(val)) return;
-      if (key === 'passengers' && val < 1) val = 1;
-      if (val < 0) val = 0;
-      config[key] = val;
-      updateTotalsInUI();
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => chrome.storage.sync.set(config), 600);
-    };
-  });
-}
-
-function updateTotalsInUI() {
-  const d = calc(currentNet);
-  const isTotal = config.displayMode === 'total';
-  const finalEl = popup?.querySelector('#voeFinalLabel');
-  const profitEl = popup?.querySelector('#voeProfitLabel');
-  if (d && finalEl && profitEl) {
-    finalEl.textContent = `USD ${money(isTotal ? d.final : d.finalPax)}`;
-    profitEl.textContent = `USD ${money(isTotal ? d.profit : d.profitPax)}`;
-  }
-}
-
-function saveAndRefresh() {
+function persistConfig() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => chrome.storage.sync.set(config), 400);
-  renderPopupBody();
+  saveTimer = setTimeout(() => {
+    chrome.storage.sync.set({
+      passengers: config.passengers,
+      margin: config.margin,
+      bok: config.bok,
+      displayMode: config.displayMode
+    });
+  }, 400);
 }
 
-function positionPopup(el, rect) {
+function positionNear(el, rect) {
   let top = rect.bottom + PAD;
   let left = rect.left;
   if (top + POPUP_H_EST > window.innerHeight) top = rect.top - POPUP_H_EST - PAD;
@@ -461,7 +432,7 @@ function makeDraggable(el) {
   const h = el.querySelector('.voe-header');
   if (!h) return;
   h.addEventListener('mousedown', (e) => {
-    if (e.target.closest('.voe-close') || e.target.closest('.voe-switch') || e.target.closest('input') || e.target.closest('button')) return;
+    if (e.target.closest('.voe-close') || e.target.closest('input') || e.target.closest('button')) return;
     const ox = e.clientX, oy = e.clientY;
     const sl = parseInt(el.style.left) || 0, st = parseInt(el.style.top) || 0;
 
@@ -486,7 +457,7 @@ function makeResizable(el) {
     const os = parseFloat(el.style.getPropertyValue('--voe-scale')) || 1;
 
     function onMove(me) {
-      const s = Math.max(0.6, Math.min(1.5, os + (me.clientX - ox) / 250));
+      const s = Math.max(0.7, Math.min(1.4, os + (me.clientX - ox) / 260));
       el.style.setProperty('--voe-scale', s);
     }
     function onUp() {
@@ -506,7 +477,9 @@ function destroyPopup() {
   }
 }
 
-function onEsc(e) { if (e.key === 'Escape') destroyPopup(); }
+function onEsc(e) {
+  if (e.key === 'Escape') destroyPopup();
+}
 
 window.addEventListener('beforeunload', destroyPopup);
 

@@ -5,95 +5,106 @@
   <title>EM Flights - Config</title>
   <style>
     :root {
-      --bg: rgba(255, 255, 255, 0.8);
-      --border: rgba(255, 255, 255, 0.3);
+      --bg: #FFFFFF;
+      --card-bg: #F8F9FA;
+      --border: rgba(0, 0, 0, 0.08);
       --accent: #0071E3;
+      --accent-hover: #0077ED;
       --text: #1C1C1E;
-      --text-sec: #3C3C43CC;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: rgba(28, 28, 30, 0.85);
-        --border: rgba(255, 255, 255, 0.1);
-        --text: #F2F2F7;
-        --text-sec: #AEAEB2;
-      }
+      --text-sec: #6E6E73;
+      --success: #34C759;
     }
 
-    *{ margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
 
     body {
-      width: 280px;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif;
+      width: 290px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif;
       background: var(--bg);
-      backdrop-filter: blur(20px);
       color: var(--text);
       overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     }
 
+    /* Header */
     .hd {
       background: linear-gradient(135deg, #0040C8 0%, #0071E3 100%);
-      padding: 20px 18px;
+      padding: 22px 18px 20px;
       text-align: center;
       color: white;
+      position: relative;
     }
 
     .hd-logo {
-      width: 44px; height: 44px; margin: 0 auto 12px;
-      background: rgba(255,255,255,0.2);
-      border: 1px solid rgba(255,255,255,0.3);
+      width: 48px; height: 48px; margin: 0 auto 10px;
       border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
     }
-    .hd-logo svg { width: 22px; height: 22px; }
-    .hd-name { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
-    .hd-ver { font-size: 10px; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+    .hd-logo img {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .hd-name { font-size: 19px; font-weight: 800; letter-spacing: -0.5px; }
+    .hd-ver {
+      display: inline-block;
+      margin-top: 5px;
+      padding: 2px 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
 
-    .body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .body { padding: 18px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
 
+    /* Toggle Card */
     .card {
-      background: rgba(255, 255, 255, 0.4);
+      background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 12px 16px;
+      padding: 14px 16px;
       display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
     }
-    @media (prefers-color-scheme: dark) {
-      .card { background: rgba(255, 255, 255, 0.05); }
+    .card:hover {
+      background: #F2F4F7;
+      border-color: rgba(0, 113, 227, 0.2);
     }
 
-    .field-label { font-size: 15px; font-weight: 600; flex: 1; }
+    .field-label { font-size: 14px; font-weight: 700; color: var(--text); flex: 1; }
 
+    /* Switch */
     .voe-switch {
       position: relative;
       display: inline-block;
-      width: 42px;
-      height: 24px;
+      width: 44px;
+      height: 26px;
     }
     .voe-switch input { opacity: 0; width: 0; height: 0; }
     .voe-slider {
       position: absolute; cursor: pointer;
       top: 0; left: 0; right: 0; bottom: 0;
-      background-color: rgba(0,0,0,0.1);
+      background-color: #E5E5EA;
       transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
-      border-radius: 24px;
+      border-radius: 26px;
     }
     .voe-slider:before {
       position: absolute; content: "";
-      height: 18px; width: 18px;
+      height: 20px; width: 20px;
       left: 3px; bottom: 3px;
       background-color: white;
       transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
       border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.18);
     }
-    input:checked + .voe-slider { background-color: #34C759; }
+    input:checked + .voe-slider { background-color: var(--success); }
     input:checked + .voe-slider:before { transform: translateX(18px); }
 
-    @media (prefers-color-scheme: dark) {
-      .voe-slider { background-color: rgba(255,255,255,0.15); }
-    }
-
+    /* Action Button */
     .btn-calc {
       width: 100%;
       padding: 14px 16px;
@@ -109,14 +120,15 @@
       justify-content: center;
       gap: 8px;
       transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 113, 227, 0.25);
     }
     .btn-calc:hover {
       transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(0, 113, 227, 0.4);
+      box-shadow: 0 6px 16px rgba(0, 113, 227, 0.35);
     }
     .btn-calc:active {
       transform: translateY(0);
+      opacity: 0.95;
     }
 
     .btn-icon { font-size: 16px; }
@@ -125,38 +137,42 @@
       font-size: 11px;
       text-align: center;
       color: var(--text-sec);
-      padding: 8px;
-      line-height: 1.4;
+      padding: 4px 8px;
+      line-height: 1.45;
     }
 
     .dev-info {
-      text-align: center; padding: 10px;
+      text-align: center; padding: 12px;
       font-size: 11px; color: var(--text-sec);
       border-top: 1px solid var(--border);
+      background: #FAFAFC;
     }
     .dev-name { font-weight: 700; color: var(--accent); }
 
     .toast {
-      position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+      position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
       padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;
       opacity: 0; pointer-events: none; transition: all 0.3s;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(-10px); }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
     .toast.ok { background: #34C759; color: white; }
+    .toast.error { background: #FF3B30; color: white; }
   </style>
 </head>
 <body>
 
 <div class="hd">
-  <div class="hd-logo" style="background: transparent; border: none;">
-    <img src="icons/icon48.png" alt="EM Flights" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+  <div class="hd-logo">
+    <img src="icons/icon48.png" alt="EM Flights">
   </div>
   <div class="hd-name">EM Flights</div>
-  <div class="hd-ver">v1.4.0 · Manual Calc</div>
+  <div class="hd-ver">v2.1.2 · Modo Claro</div>
 </div>
 
 <div class="body">
-  <label class="card" for="enabledToggle" style="cursor:pointer">
+  <label class="card" for="enabledToggle">
     <span class="field-label" id="toggleLabel">Cargando...</span>
     <div class="voe-switch">
       <input type="checkbox" id="enabledToggle">
@@ -166,11 +182,11 @@
 
   <button class="btn-calc" id="openManualCalc">
     <span class="btn-icon">📊</span>
-    Calculadora Manual
+    Abrir Calculadora Manual
   </button>
 
   <p class="info-text">
-    Activa la calculadora flotante al hacer clic en precios de GWC, o usa la calculadora manual desde aquí.
+    Haz clic en cualquier tarifa en GWC para abrir la calculadora contextual, o usa el botón superior para cotizaciones manuales.
   </p>
 </div>
 

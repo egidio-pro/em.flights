@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Pruebas - EM Flights v2.1.2 (Modo Claro)</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    :root {
+      --primary: #0071E3;
+      --bg-page: #f5f7fb;
+      --card-bg: #ffffff;
+      --text: #1d1d1f;
+      --text-muted: #86868b;
+      --border: #e5e5ea;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg-page); color: var(--text); padding-bottom: 80px; }
+
+    /* Test Toolbar */
+    .test-toolbar {
+      background: #FFFFFF;
+      color: #1C1C1E;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .test-toolbar-brand { display: flex; align-items: center; gap: 12px; }
+    .test-badge {
+      background: #E8F5E9;
+      color: #2E7D32;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .test-actions { display: flex; gap: 10px; align-items: center; }
+    .btn-test {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-test:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-test-sec { background: #F2F4F7; color: #1C1C1E; border: 1px solid rgba(0,0,0,0.08); }
+
+    /* GWC Simulation Layout */
+    .gwc-container { max-width: 960px; margin: 30px auto; padding: 0 20px; }
+    .gwc-header {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .gwc-title { font-size: 20px; font-weight: 800; color: #003366; margin-bottom: 8px; }
+    .gwc-subtitle { font-size: 13px; color: var(--text-muted); }
+
+    .test-banner {
+      background: #eef7ff;
+      border: 1px solid #c7e3ff;
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #0056b3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .flight-card {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .flight-card:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgba(0,113,227,0.08); }
+
+    .airline-info { display: flex; align-items: center; gap: 14px; width: 180px; }
+    .airline-logo {
+      width: 44px; height: 44px;
+      background: #f0f0f5;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .airline-name { font-weight: 700; font-size: 15px; }
+    .airline-flight { font-size: 12px; color: var(--text-muted); }
+
+    .route-info { display: flex; align-items: center; gap: 20px; text-align: center; }
+    .time-block .time { font-size: 18px; font-weight: 800; }
+    .time-block .city { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+    .route-line {
+      display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); font-size: 11px;
+    }
+    .route-bar { width: 80px; height: 2px; background: #d2d2d7; position: relative; }
+    .route-bar::after {
+      content: "✈"; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); font-size: 10px;
+    }
+
+    .price-cont {
+      text-align: right;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: #f8f9fa;
+      border: 1px solid #edf0f5;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .price-cont:hover { background: #e8f3ff; border-color: #b9dcff; }
+    .price-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 2px; }
+    
+    strong.priceNumb {
+      font-size: 22px;
+      font-weight: 900;
+      color: #0071E3;
+      cursor: pointer;
+      display: inline-block;
+      transition: transform 0.15s ease;
+    }
+    strong.priceNumb:hover {
+      transform: scale(1.06);
+      text-decoration: underline;
+    }
+
+    /* Automated Test Results Drawer */
+    #testResults {
+      margin-top: 24px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      display: none;
+    }
+    .test-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f2f2f7;
+      font-size: 13px;
+    }
+    .test-row:last-child { border-bottom: none; }
+    .status-pill {
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    }
+    .status-pass { background: #E4F9E8; color: #1E7A3C; }
+    .status-fail { background: #FFE5E5; color: #D70015; }
+  </style>
+
+  <!-- Polyfill / Mock Chrome API for local browser testing -->
+  <script>
+    window.chrome = {
+      runtime: {
+        id: 'em-flights-test-id',
+        getURL: function(path) { return path; },
+        onMessage: {
+          listeners: [],
+          addListener: function(fn) { this.listeners.push(fn); }
+        }
+      },
+      storage: {
+        sync: {
+          data: { passengers: 1, margin: 10, bok: 0.8, enabled: true, displayMode: 'total' },
+          get: async function(defaults) {
+            return { ...defaults, ...this.data };
+          },
+          set: async function(val) {
+            this.data = { ...this.data, ...val };
+            return true;
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body>
+
+  <!-- Test Toolbar -->
+  <div class="test-toolbar">
+    <div class="test-toolbar-brand">
+      <img src="icons/icon48.png" width="28" height="28" style="border-radius: 6px;" alt="Logo">
+      <div>
+        <strong style="font-size: 15px;">EM Flights v2.1.2</strong>
+        <span style="font-size: 11px; opacity: 0.6; margin-left: 6px;">Modo Claro Unificado</span>
+      </div>
+      <span class="test-badge">Listo para Publicar</span>
+    </div>
+
+    <div class="test-actions">
+      <button class="btn-test" id="btnRunTests" onclick="runAutomatedTests()">
+        🧪 Ejecutar Tests Automáticos
+      </button>
+      <button class="btn-test btn-test-sec" id="btnTestManualCalc" onclick="openManualFromTest()">
+        📊 Calculadora Manual
+      </button>
+      <button class="btn-test btn-test-sec" id="btnToggleExt" onclick="toggleExtensionState()">
+        ⚡ Alternar On/Off
+      </button>
+    </div>
+  </div>
+
+  <div class="gwc-container">
+    <div class="gwc-header">
+      <div class="gwc-title">Global Web Connect (GWC) · Vuelos Disponibles</div>
+      <div class="gwc-subtitle">Montevideo (MVD) ➔ Miami (MIA) · Tarifas Netas de Emisión</div>
+    </div>
+
+    <div class="test-banner">
+      <span>💡 <strong>Prueba de Modo Claro:</strong> Haz clic en cualquier precio para ver la calculadora en modo claro con ajuste en vivo, presets y botón de copiar cotización.</span>
+      <span style="font-size: 11px; opacity: 0.8;">[ESC] para cerrar</span>
+    </div>
+
+    <!-- Vuelo 1: Formato con punto de miles (Latinoamericano) -->
+    <div class="flight-card" id="flight1">
+      <div class="airline-info">
+        <div class="airline-logo">✈️</div>
+        <div>
+          <div class="airline-name">LATAM Airlines</div>
+          <div class="airline-flight">LA 8042 · Boeing 787</div>
+        </div>
+      </div>
+      <div class="route-info">
+        <div class="time-block">
+          <div class="time">06:15</div>
+          <div class="city">MVD</div>
+        </div>
+        <div class="route-line">
+          <span>8h 45m</span>
+          <div class="route-bar"></div>
+          <span>Directo</span>
+        </div>
+        <div class="time-block">
+          <div class="time">15:00</div>
+          <div class="city">MIA</div>
+        </div>
+      </div>
+      <div class="price-cont" title="Clic para calcular con EM Flights">
+        <div class="price-label">Neto GWC (Miles con punto)</div>
+        <strong class="priceNumb" id="price1">USD 1.250</strong>
+      </div>
+    </div>
+
+    <!-- Vuelo 2: Formato con decimales (1.480,50) -->
+    <div class="flight-card" id="flight2">
+      <div class="airline-info">
+        <div class="airline-logo">✈️</div>
+        <div>
+          <div class="airline-name">Copa Airlines</div>
+          <div class="airline-flight">CM 384 · 1 escala PTY</div>
+        </div>
+      </div>
+      <div class="route-info">
+        <div class="time-block">
+          <div class="time">01:30</div>
+          <div class="city">MVD</div>
+        </div>
+        <div class="route-line">
+          <span>10h 15m</span>
+          <div class="route-bar"></div>
+          <span>1 escala</span>
+        </div>
+        <div class="time-block">
+          <div class="time">11:45</div>
+          <div class="city">MIA</div>
+        </div>
+      </div>
+      <div class="price-cont" title="Clic para calcular con EM Flights">
+        <div class="price-label">Neto GWC (Con decimales)</div>
+        <strong class="priceNumb" id="price2">$ 1.480,50</strong>
+      </div>
+    </div>
+
+    <!-- Vuelo 3: Formato Anglosajón (1,320.75) -->
+    <div class="flight-card" id="flight3">
+      <div class="airline-info">
+        <div class="airline-logo">✈️</div>
+        <div>
+          <div class="airline-name">American Airlines</div>
+          <div class="airline-flight">AA 900 · Boeing 777</div>
+        </div>
+      </div>
+      <div class="route-info">
+        <div class="time-block">
+          <div class="time">21:00</div>
+          <div class="city">MVD</div>
+        </div>
+        <div class="route-line">
+          <span>9h 10m</span>
+          <div class="route-bar"></div>
+          <span>Directo</span>
+        </div>
+        <div class="time-block">
+          <div class="time">06:10</div>
+          <div class="city">MIA</div>
+        </div>
+      </div>
+      <div class="price-cont" title="Clic para calcular con EM Flights">
+        <div class="price-label">Neto GWC (Formato US)</div>
+        <strong class="priceNumb" id="price3">USD 1,320.75</strong>
+      </div>
+    </div>
+
+    <!-- Vuelo 4: Formato Entero Simple (980) -->
+    <div class="flight-card" id="flight4">
+      <div class="airline-info">
+        <div class="airline-logo">✈️</div>
+        <div>
+          <div class="airline-name">Avianca</div>
+          <div class="airline-flight">AV 110 · 1 escala BOG</div>
+        </div>
+      </div>
+      <div class="route-info">
+        <div class="time-block">
+          <div class="time">07:20</div>
+          <div class="city">MVD</div>
+        </div>
+        <div class="route-line">
+          <span>11h 20m</span>
+          <div class="route-bar"></div>
+          <span>1 escala</span>
+        </div>
+        <div class="time-block">
+          <div class="time">18:40</div>
+          <div class="city">MIA</div>
+        </div>
+      </div>
+      <div class="price-cont" title="Clic para calcular con EM Flights">
+        <div class="price-label">Neto Promo (Entero)</div>
+        <strong class="priceNumb" id="price4">980</strong>
+      </div>
+    </div>
+
+    <!-- Panel de Resultados de Tests Automáticos -->
+    <div id="testResults">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="font-size: 16px; font-weight: 800;">Reporte de Pruebas de Funcionamiento (v2.1.2)</h3>
+        <span id="testSummaryPill" class="status-pill status-pass">0 / 0</span>
+      </div>
+      <div id="testList"></div>
+    </div>
+  </div>
+
+  <!-- Carga del script de la extensión -->
+  <script src="content.js"></script>
+
+  <!-- Script de pruebas automáticas -->
+  <script>
+    let isExtEnabled = true;
+
+    function openManualFromTest() {
+      if (window.chrome?.runtime?.onMessage?.listeners) {
+        window.chrome.runtime.onMessage.listeners.forEach(fn => {
+          fn({ type: 'OPEN_MANUAL_CALC', config: { passengers: 1, margin: 10, bok: 0.8 } }, { id: 'em-flights-test-id' });
+        });
+      }
+    }
+
+    function toggleExtensionState() {
+      isExtEnabled = !isExtEnabled;
+      if (window.chrome?.runtime?.onMessage?.listeners) {
+        window.chrome.runtime.onMessage.listeners.forEach(fn => {
+          fn({ type: 'TOGGLE_STATE', enabled: isExtEnabled }, { id: 'em-flights-test-id' });
+        });
+      }
+      alert(isExtEnabled ? 'Calculadora ACTIVADA' : 'Calculadora DESACTIVADA');
+    }
+
+    async function runAutomatedTests() {
+      const resultsDiv = document.getElementById('testResults');
+      const testList = document.getElementById('testList');
+      const summaryPill = document.getElementById('testSummaryPill');
+      testList.innerHTML = '';
+      resultsDiv.style.display = 'block';
+
+      const tests = [];
+
+      // Test 1: parsePrice
+      const p1 = parsePrice("USD 1.250");
+      tests.push({
+        name: 'Parseo de formato con punto de miles ("USD 1.250" => 1250)',
+        pass: p1 === 1250,
+        detail: `Obtenido: ${p1}`
+      });
+
+      const p2 = parsePrice("$ 1.480,50");
+      tests.push({
+        name: 'Parseo de formato decimal con coma ("$ 1.480,50" => 1480.50)',
+        pass: p2 === 1480.5,
+        detail: `Obtenido: ${p2}`
+      });
+
+      const p3 = parsePrice("USD 1,320.75");
+      tests.push({
+        name: 'Parseo de formato anglosajón ("USD 1,320.75" => 1320.75)',
+        pass: p3 === 1320.75,
+        detail: `Obtenido: ${p3}`
+      });
+
+      // Test 2: Fórmula de margen real
+      const c1 = calc(1000);
+      tests.push({
+        name: 'Fórmula de margen real sobre venta: 1000 / (1 - 0.108) = 1121.08',
+        pass: c1 && Math.abs(c1.final - 1121.076) < 0.05,
+        detail: `Final calculado: USD ${Math.round(c1?.final || 0)}`
+      });
+
+      // Test 3: Clic en precio y apertura del popup
+      const priceEl = document.getElementById('price1');
+      priceEl.click();
+      await new Promise(r => setTimeout(r, 100));
+
+      const popupEl = document.querySelector('.voe-popup');
+      tests.push({
+        name: 'Generación del popup flotante unificado en Modo Claro (.voe-popup)',
+        pass: !!popupEl,
+        detail: popupEl ? 'Popup detectado en el DOM' : 'No se encontró el popup'
+      });
+
+      // Test 4: Verificación de campo de precio editable
+      const netField = popupEl?.querySelector('#voeNetPrice');
+      tests.push({
+        name: 'Campo de tarifa neta editable en vivo presente en el popup',
+        pass: netField && parseFloat(netField.value) === 1250,
+        detail: `Valor en campo de texto: "${netField?.value}"`
+      });
+
+      // Test 5: Presets de margen rápido
+      const presetBtn = popupEl?.querySelector('.voe-preset-btn[data-preset="15"]');
+      if (presetBtn) presetBtn.click();
+      await new Promise(r => setTimeout(r, 60));
+      const marginInput = popupEl?.querySelector('#voeMarginInput');
+      tests.push({
+        name: 'Botón de Preset de Margen Rápido (15%) aplicó el valor correctamente',
+        pass: marginInput && parseFloat(marginInput.value) === 15,
+        detail: `Margen actual: ${marginInput?.value}%`
+      });
+
+      // Test 6: Botón de copiar cotización
+      const copyBtn = popupEl?.querySelector('#voeCopyBtn');
+      tests.push({
+        name: 'Botón de "Copiar Cotización" presente con icono y feedback visual',
+        pass: !!copyBtn,
+        detail: copyBtn ? 'Botón detectado' : 'No se encontró el botón de copiar'
+      });
+
+      // Test 7: Cierre con Escape
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      await new Promise(r => setTimeout(r, 100));
+      const closedPopup = document.querySelector('.voe-popup');
+      tests.push({
+        name: 'Cierre de la ventana flotante al pulsar la tecla Escape [ESC]',
+        pass: !closedPopup,
+        detail: !closedPopup ? 'Popup cerrado correctamente' : 'El popup aún permanece'
+      });
+
+      // Renderizar filas
+      let passedCount = 0;
+      tests.forEach(t => {
+        if (t.pass) passedCount++;
+        const row = document.createElement('div');
+        row.className = 'test-row';
+        row.innerHTML = `
+          <div>
+            <strong>${t.pass ? '✓' : '✗'} ${t.name}</strong>
+            <div style="color: var(--text-muted); font-size: 11px; margin-top: 2px;">${t.detail}</div>
+          </div>
+          <span class="status-pill ${t.pass ? 'status-pass' : 'status-fail'}">${t.pass ? 'PASÓ' : 'FALLÓ'}</span>
+        `;
+        testList.appendChild(row);
+      });
+
+      summaryPill.textContent = `${passedCount} de ${tests.length} Aprobados`;
+      summaryPill.className = `status-pill ${passedCount === tests.length ? 'status-pass' : 'status-fail'}`;
+    }
+  </script>
+</body>
+</html>

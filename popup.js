@@ -1,3 +1,5 @@
+'use strict';
+
 const toggleCheck = document.getElementById('enabledToggle');
 const toggleLbl = document.getElementById('toggleLabel');
 const toast = document.getElementById('toast');
@@ -28,15 +30,16 @@ toggleCheck.addEventListener('change', async () => {
 openManualCalcBtn.addEventListener('click', async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) {
-    showToast('Error: sin tab', 'error');
+    showToast('Abre una pestaña web primero', 'error');
     return;
   }
 
   try {
     await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_MANUAL_CALC', config: calcConfig });
-    showToast('✓ Calculadora Manual abierta', 'ok');
+    showToast('✓ Calculadora abierta en la página', 'ok');
+    setTimeout(() => window.close(), 500);
   } catch (err) {
-    showToast('Error abriendo calculadora', 'error');
+    showToast('Navega a una web para abrir la calculadora', 'error');
   }
 });
 
@@ -48,25 +51,5 @@ function showToast(msg, type = 'ok') {
   clearTimeout(toastTimer);
   toast.textContent = msg;
   toast.className = `toast ${type} show`;
-  toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
-}
-
-function calc(net) {
-  if (!net || net <= 0) return null;
-  const pct = calcConfig.margin + calcConfig.bok;
-  if (pct >= 100) return null;
-  const final = net / (1 - pct / 100);
-  return {
-    net,
-    pct,
-    final,
-    finalPax: final / calcConfig.passengers,
-    profit: final - net,
-    profitPax: (final - net) / calcConfig.passengers,
-    pax: calcConfig.passengers
-  };
-}
-
-function money(n) {
-  return isNaN(n) ? '—' : Math.round(n).toLocaleString('es-UY');
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
 }

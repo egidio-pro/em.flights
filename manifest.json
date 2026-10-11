@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "EM Flights",
-  "version": "1.4.0",
+  "version": "2.1.2",
   "description": "Calculadora de margen real para GWC",
   "permissions": ["storage", "activeTab", "scripting"],
   "content_security_policy": {
