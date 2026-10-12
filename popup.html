@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <title>EM Flights - Config</title>
@@ -16,7 +17,12 @@
       --info-text: #1E40AF;
     }
 
-    * { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
 
     body {
       width: 300px;
@@ -49,6 +55,7 @@
       justify-content: center;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
     }
+
     .hd-logo-wrap img {
       width: 48px;
       height: 48px;
@@ -61,6 +68,7 @@
       letter-spacing: -0.5px;
       color: #FFFFFF;
     }
+
     .hd-ver {
       font-size: 10px;
       font-weight: 700;
@@ -94,11 +102,13 @@
       flex-direction: column;
       gap: 4px;
     }
+
     .switch-title {
       font-size: 15px;
       font-weight: 800;
       color: var(--text);
     }
+
     .switch-status {
       font-size: 11px;
       font-weight: 800;
@@ -108,6 +118,7 @@
       gap: 5px;
       letter-spacing: 0.3px;
     }
+
     .switch-status.off {
       color: #94A3B8;
     }
@@ -119,25 +130,45 @@
       width: 48px;
       height: 28px;
     }
-    .voe-switch input { opacity: 0; width: 0; height: 0; }
+
+    .voe-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
     .voe-slider {
-      position: absolute; cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       background-color: #CBD5E1;
       transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
       border-radius: 28px;
     }
+
     .voe-slider:before {
-      position: absolute; content: "";
-      height: 22px; width: 22px;
-      left: 3px; bottom: 3px;
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
       background-color: white;
       transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
       border-radius: 50%;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     }
-    input:checked + .voe-slider { background-color: var(--green-status); }
-    input:checked + .voe-slider:before { transform: translateX(20px); }
+
+    input:checked+.voe-slider {
+      background-color: var(--green-status);
+    }
+
+    input:checked+.voe-slider:before {
+      transform: translateX(20px);
+    }
 
     /* Tarjeta Itaú Volar (Millas) */
     .itau-card {
@@ -150,11 +181,13 @@
       gap: 10px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
     }
+
     .itau-card-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
+
     .itau-badge {
       font-size: 10px;
       font-weight: 800;
@@ -168,21 +201,25 @@
       align-items: center;
       gap: 5px;
     }
+
     .itau-title {
       font-size: 12px;
       font-weight: 800;
       color: var(--text);
     }
+
     .itau-fields-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
+
     .itau-field-item {
       display: flex;
       flex-direction: column;
       gap: 3px;
     }
+
     .itau-label {
       font-size: 10px;
       font-weight: 700;
@@ -190,6 +227,7 @@
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
+
     .itau-input {
       width: 100%;
       background: #F8FAFC;
@@ -203,11 +241,13 @@
       transition: all 0.15s ease;
       box-sizing: border-box;
     }
+
     .itau-input:focus {
       border-color: #0B57CF;
       background: #FFFFFF;
       box-shadow: 0 0 0 2px rgba(11, 87, 207, 0.1);
     }
+
     .itau-hint {
       font-size: 10.5px;
       color: #059669;
@@ -228,6 +268,7 @@
       align-items: flex-start;
       gap: 10px;
     }
+
     .alert-icon {
       width: 18px;
       height: 18px;
@@ -242,11 +283,13 @@
       flex-shrink: 0;
       margin-top: 1px;
     }
+
     .alert-text {
       font-size: 11.5px;
       color: var(--info-text);
       line-height: 1.45;
     }
+
     .alert-text strong {
       font-weight: 800;
     }
@@ -270,6 +313,7 @@
       transition: all 0.2s ease;
       box-shadow: 0 2px 6px rgba(11, 87, 207, 0.08);
     }
+
     .btn-manual:hover {
       background: #0B57CF;
       color: #FFFFFF;
@@ -287,7 +331,12 @@
       flex-direction: column;
       gap: 3px;
     }
-    .dev-name { font-weight: 800; color: #1E293B; }
+
+    .dev-name {
+      font-weight: 800;
+      color: #1E293B;
+    }
+
     .dev-license {
       font-size: 9.5px;
       color: #64748B;
@@ -296,18 +345,39 @@
     }
 
     .toast {
-      position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
-      padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700;
-      opacity: 0; pointer-events: none; transition: all 0.3s;
+      position: absolute;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s;
       white-space: nowrap;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       z-index: 100;
     }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
-    .toast.ok { background: #10B981; color: white; }
-    .toast.error { background: #EF4444; color: white; }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-6px);
+    }
+
+    .toast.ok {
+      background: #10B981;
+      color: white;
+    }
+
+    .toast.error {
+      background: #EF4444;
+      color: white;
+    }
   </style>
 </head>
+
 <body>
 
   <!-- Cabecera Azul -->
@@ -337,9 +407,10 @@
       <div class="itau-card-header">
         <span class="itau-badge">
           <svg width="14" height="14" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="28" height="28" rx="6.5" fill="#EC7000"/>
-            <rect x="3.5" y="3.5" width="21" height="21" rx="4.5" fill="#002D62"/>
-            <text x="14" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="10" fill="#FEDD00" text-anchor="middle" letter-spacing="-0.3">itau</text>
+            <rect width="28" height="28" rx="6.5" fill="#EC7000" />
+            <rect x="3.5" y="3.5" width="21" height="21" rx="4.5" fill="#002D62" />
+            <text x="14" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+              font-weight="900" font-size="10" fill="#FEDD00" text-anchor="middle" letter-spacing="-0.3">itau</text>
           </svg>
           Itaú Volar
         </span>
@@ -364,13 +435,15 @@
     <div class="alert-card">
       <div class="alert-icon">i</div>
       <div class="alert-text">
-        Los ajustes de <strong>margen, millas y pasajeros</strong> se realizan directamente en la ventana flotante al cotizar.
+        Los ajustes de <strong>margen, millas y pasajeros</strong> se realizan directamente en la ventana flotante al
+        cotizar.
       </div>
     </div>
 
     <!-- Botón de Calculadora Manual -->
     <button class="btn-manual" id="openManualCalc">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+        stroke-linecap="round" stroke-linejoin="round">
         <line x1="4" y1="21" x2="4" y2="14"></line>
         <line x1="4" y1="10" x2="4" y2="3"></line>
         <line x1="12" y1="21" x2="12" y2="12"></line>
@@ -394,4 +467,5 @@
 
   <script src="popup.js"></script>
 </body>
+
 </html>
