@@ -35,17 +35,27 @@ async function init() {
   log('Starting', chrome.runtime.getManifest().version);
 
   try {
-    const st = await chrome.storage.sync.get({
-      passengers: 1,
-      margin: 10,
-      bok: 0.8,
+    // Solo se cargan localmente las preferencias del popup (valor de la milla y mínimo de millas)
+    let st = await chrome.storage.local.get({
       enabled: true,
       itauMileValue: 0.0125,
-      itauMinMiles: 5000,
-      itauMiles: 0,
-      itauActive: false
+      itauMinMiles: 5000
     });
-    config = { ...config, ...st, itauMiles: 0 };
+
+    if (st.itauMileValue === 0.0125 && st.itauMinMiles === 5000) {
+      const syncCfg = await chrome.storage.sync.get(['enabled', 'itauMileValue', 'itauMinMiles']).catch(() => ({}));
+      if (syncCfg && (syncCfg.itauMileValue !== undefined || syncCfg.itauMinMiles !== undefined)) {
+        st = { ...st, ...syncCfg };
+        await chrome.storage.local.set(st);
+      }
+    }
+
+    config = {
+      ...config,
+      enabled: st.enabled !== undefined ? st.enabled : true,
+      itauMileValue: st.itauMileValue !== undefined ? st.itauMileValue : 0.0125,
+      itauMinMiles: st.itauMinMiles !== undefined ? st.itauMinMiles : 5000
+    };
 
     window.__emFlightsInjected = true;
     document.addEventListener('click', onDocClick, true);
@@ -59,7 +69,7 @@ async function init() {
 
 // Sincroniza en todas las pestañas los ajustes globales cambiados desde el popup
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== 'sync') return;
+  if (area !== 'local') return;
   const globalKeys = ['enabled', 'itauMileValue', 'itauMinMiles'];
   let touched = false;
   for (const k of globalKeys) {
@@ -1030,18 +1040,9 @@ function money(n) {
   return isNaN(n) ? '0' : Math.round(n).toLocaleString('es-UY');
 }
 
-function persistConfig() {
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    chrome.storage.sync.set({
-      passengers: config.passengers,
-      margin: config.margin,
-      bok: config.bok,
-      itauActive: config.itauActive,
-      itauMiles: config.itauMiles
-    });
-  }, 400);
-}
+// Las variables de cotización (margen, bok, pasajeros, millas) se manejan en memoria por sesión.
+// Solo se persisten localmente las preferencias globales (Millas Itaú) configuradas en el popup.
+function persistConfig() {}
 
 function makeDraggable(el) {
   const h = el.querySelector('.voe-header');

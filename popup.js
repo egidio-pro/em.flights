@@ -22,11 +22,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     versionEl.textContent = `V${chrome.runtime.getManifest().version} · CALCULADORA`;
   }
 
-  const cfg = await chrome.storage.sync.get({
+  // Almacenar localmente solo las preferencias del popup (valor milla y mínimo millas)
+  let cfg = await chrome.storage.local.get({
     enabled: true,
     itauMileValue: 0.0125,
     itauMinMiles: 5000
   });
+
+  // Migración transparente si existían en storage.sync
+  if (cfg.itauMileValue === 0.0125 && cfg.itauMinMiles === 5000) {
+    const syncCfg = await chrome.storage.sync.get(['enabled', 'itauMileValue', 'itauMinMiles']).catch(() => ({}));
+    if (syncCfg && (syncCfg.itauMileValue !== undefined || syncCfg.itauMinMiles !== undefined)) {
+      cfg = { ...cfg, ...syncCfg };
+      await chrome.storage.local.set(cfg);
+    }
+  }
+
   calcConfig = { ...calcConfig, ...cfg };
 
   toggleCheck.checked = calcConfig.enabled;
@@ -41,7 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 toggleCheck.addEventListener('change', async () => {
   const next = toggleCheck.checked;
   calcConfig.enabled = next;
-  await chrome.storage.sync.set({ enabled: next });
+  await chrome.storage.local.set({ enabled: next });
   setToggleUI(next);
   showToast(next ? 'Calculadora Activada' : 'Calculadora Desactivada', next ? 'ok' : 'error');
 });
@@ -78,7 +89,7 @@ function updateItauHint() {
 function debouncedSaveItau() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
-    await chrome.storage.sync.set({
+    await chrome.storage.local.set({
       itauMileValue: calcConfig.itauMileValue,
       itauMinMiles: calcConfig.itauMinMiles
     });

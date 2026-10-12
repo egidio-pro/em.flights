@@ -37,7 +37,7 @@ Cuenta con dos modos de operación integrados:
   $$\text{Precio Final} = \frac{\text{Tarifa Neta}}{1 - \frac{\text{Margen } \% + \text{BOK } \%}{100}}$$
   $$\text{Total a Cobrar} = \max(0, \text{Precio Final} - \text{Descuento Millas})$$
 * **📋 Copiado al Portapapeles con 1 Clic**: Clic en el precio total copia el total listo para cotizar; clic en el precio por pasajero copia el valor unitario con confirmación visual interactiva.
-* **⚙️ Configuración Personalizada en Popup**: Parámetros de millas, interruptor general de la extensión y acceso a la calculadora manual con guardado sincronizado (`chrome.storage.sync`).
+* **⚙️ Configuración Personalizada en Popup**: Parámetros de millas, interruptor general de la extensión y acceso a la calculadora manual con guardado local seguro (`chrome.storage.local`).
 
 ---
 

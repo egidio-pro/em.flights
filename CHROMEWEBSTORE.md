@@ -55,7 +55,7 @@ CONFIGURACIÓN Y PARÁMETROS:
 
 PRIVACIDAD Y SEGURIDAD:
 
-EM Flights no recopila datos personales, no realiza seguimiento de navegación ni se conecta a servidores externos. Todo el procesamiento de cálculos se realiza exclusivamente dentro de tu navegador de forma privada y segura. La configuración de usuario se almacena localmente y se sincroniza en tu cuenta mediante Chrome Storage.
+EM Flights no recopila datos personales, no realiza seguimiento de navegación ni se conecta a servidores externos. Todo el procesamiento de cálculos se realiza exclusivamente dentro de tu navegador de forma privada y segura. La configuración de usuario se almacena localmente de forma privada en tu navegador mediante Chrome Storage Local.
 
 HISTORIAL DE VERSIONES:
 
@@ -99,7 +99,7 @@ Para la pestaña de privacidad en la consola de Google Chrome Developer:
 
 | Permiso | Justificación para el equipo de revisión de Google |
 | :--- | :--- |
-| **`storage`** | Necesario para guardar las preferencias del agente de viajes (valor por milla Itaú, mínimo de millas para canje y estado activo de la calculadora) sincronizadas en su perfil de Chrome mediante `chrome.storage.sync`. |
+| **`storage`** | Necesario para guardar localmente en el dispositivo las preferencias del agente de viajes (valor por milla Itaú, mínimo de millas para canje y estado activo de la calculadora) mediante `chrome.storage.local`. |
 | **`activeTab`** | Necesario para permitir que el agente abra la Calculadora Manual en cualquier pestaña activa únicamente cuando hace clic explícito en el botón "Abrir Calculadora Manual" desde el popup de la extensión. |
 | **`scripting`** | Utilizado exclusivamente para inyectar la interfaz de la Calculadora Manual bajo demanda en la pestaña activa tras la acción del usuario en el popup, evitando inyecciones automáticas innecesarias en sitios web ajenos a GWC. |
 
