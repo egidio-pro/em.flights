@@ -1,8 +1,8 @@
-# ✈️ EM Flights (v2.1.2)
+# ✈️ EM Flights (v2.2.0)
 
 > **Calculadora de Margen Real, Pasajeros y Canje de Millas Itaú Volar para Emisión de Vuelos**
 
-[![Version](https://img.shields.io/badge/version-2.1.2-blue.svg)](https://github.com/egidio-pro/em.flights)
+[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](https://github.com/egidio-pro/em.flights)
 [![Manifest](https://img.shields.io/badge/manifest-v3-green.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Platform](https://img.shields.io/badge/platform-Google%20Chrome-4285F4.svg)](https://www.google.com/chrome/)
@@ -14,7 +14,7 @@
 **EM Flights** es una extensión moderna para Google Chrome diseñada para agentes de viajes, consolidadores y profesionales del turismo. Permite cotizar tarifas aéreas en tiempo real aplicando la fórmula de **margen real sobre venta**, desglosar precios por grupo de pasajeros y aplicar canje de **Millas Itaú Volar** con cálculo en vivo.
 
 Cuenta con dos modos de operación integrados:
-1. **Detección Automática en GWC**: Al hacer clic en cualquier tarifa neta dentro de `gwc.glas.travel/search`, la calculadora se abre automáticamente capturando el precio.
+1. **Detección Automática en GWC**: Al hacer clic en cualquier tarifa neta dentro de `gwc.glas.travel/search`, la calculadora se abre automáticamente capturando el precio y detectando los pasajeros (con ajuste manual siempre disponible).
 2. **Calculadora Manual Universal**: Accesible en cualquier sitio web o pestaña desde el popup de la extensión, permitiendo cotizar de forma independiente cualquier tarifa manual.
 
 ---
@@ -23,17 +23,20 @@ Cuenta con dos modos de operación integrados:
 
 * **🎯 Centrado Inteligente**: La ventana flotante siempre se abre exactamente en el centro de la pantalla del usuario.
 * **📐 Altura Compacta y Modo Claro**: Interfaz limpia, optimizada para minimizar la ocupación vertical de la pantalla y con soporte para arrastrar (`drag & drop`) y redimensionar.
-* **📊 Precio Unificado**: Muestra simultáneamente el **Precio Total en destaque** y el **Precio por Pasajero en formato secundario**, sin necesidad de conmutar vistas.
-* **💳 Canje de Millas Itaú Volar**:
+* **📊 Precio Unificado y Desglose en Tarjeta Azul**: Muestra el **Total a Cobrar en destaque principal**. Al cotizar con Millas Itaú, desglosa el precio de venta y las millas a descontar; en cotización sin millas, exhibe el valor por pasajero (cuando pax > 1).
+* **💳 Canje de Millas Itaú Volar con Tope Inteligente**:
   * Conmutador directo: `[ SIN MILLAS | 💳 MILLAS ITAÚ ]`.
-  * Deducción aplicada directamente sobre el valor total del billete.
+  * **Tope máximo automático**: Calcula e indica las millas necesarias para cubrir el billete sin permitir desbordes accidentales.
+  * Por defecto `0` millas para control total del agente.
+  * Deducción aplicada directamente sobre el valor total del billete con redondeo sin discrepancias de 1 USD.
   * Mínimo configurable de millas (por defecto `5.000` millas).
   * Valor monetario por milla configurable (por defecto `USD 0,0125` / milla).
   * Stepper rápido de $\pm 1.000$ millas y chips de selección rápida (`0`, `5K`, `10K`, `15K`, `20K`).
+* **👥 Pasajeros Editables**: Detección automática inteligente en GWC con steppers y entrada manual siempre habilitados para ajustar la cotización en vivo.
 * **🧮 Margen Real de Agencia**:
   $$\text{Precio Final} = \frac{\text{Tarifa Neta}}{1 - \frac{\text{Margen } \% + \text{BOK } \%}{100}}$$
   $$\text{Total a Cobrar} = \max(0, \text{Precio Final} - \text{Descuento Millas})$$
-* **📋 Copiado al Portapapeles con 1 Clic**: Formatea el texto listo para enviar por WhatsApp o correo al cliente, incluyendo el desglose de pasajeros y el detalle de millas canjeadas.
+* **📋 Copiado al Portapapeles con 1 Clic**: Clic en el precio total copia el total listo para cotizar; clic en el precio por pasajero copia el valor unitario con confirmación visual interactiva.
 * **⚙️ Configuración Personalizada en Popup**: Parámetros de millas, interruptor general de la extensión y acceso a la calculadora manual con guardado sincronizado (`chrome.storage.sync`).
 
 ---

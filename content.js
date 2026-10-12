@@ -1,5 +1,5 @@
 /* ================================================================
-   EM FLIGHTS – content.js  v2.1.2
+   EM FLIGHTS – content.js  v2.2.0
    Calculadora EM (Centrada en Pantalla) + Descuento Millas Itaú Volar
    ================================================================ */
 
@@ -9,12 +9,15 @@ const POPUP_W = 320;
 const POPUP_H_EST = 360;
 const PAD = 12;
 
+// Logs de diagnóstico desactivados en producción (poner en true para depurar)
+const DEBUG = false;
+const log = (...args) => { if (DEBUG) console.log('[EM Flights]', ...args); };
+
 let config = {
   passengers: 1,
   margin: 10,
   bok: 0.8,
   enabled: true,
-  displayMode: 'total',
   itauMileValue: 0.0125,
   itauMinMiles: 5000,
   itauMiles: 0,
@@ -25,9 +28,11 @@ let popup = null;
 let currentNet = 0;
 let currentMode = 'manual'; // 'gwc' o 'manual'
 let saveTimer = null;
+let resolveReady;
+const ready = new Promise(r => { resolveReady = r; });
 
 async function init() {
-  console.log('[EM Flights] Starting v2.1.2...');
+  log('Starting', chrome.runtime.getManifest().version);
 
   try {
     const st = await chrome.storage.sync.get({
@@ -35,30 +40,46 @@ async function init() {
       margin: 10,
       bok: 0.8,
       enabled: true,
-      displayMode: 'total',
       itauMileValue: 0.0125,
       itauMinMiles: 5000,
       itauMiles: 0,
       itauActive: false
     });
-    config = { ...config, ...st };
+    config = { ...config, ...st, itauMiles: 0 };
 
+    window.__emFlightsInjected = true;
     document.addEventListener('click', onDocClick, true);
-    console.log('[EM Flights] Click listener active (GWC automatic detection)');
+    log('Click listener active (GWC automatic detection)');
   } catch (e) {
     console.error('[EM Flights] Init error:', e);
-    setTimeout(init, 1000);
+  } finally {
+    resolveReady();
   }
 }
 
-// Verifica si la página actual corresponde a GWC (gwc.glas.travel)
+// Sincroniza en todas las pestañas los ajustes globales cambiados desde el popup
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'sync') return;
+  const globalKeys = ['enabled', 'itauMileValue', 'itauMinMiles'];
+  let touched = false;
+  for (const k of globalKeys) {
+    if (changes[k]) {
+      config[k] = changes[k].newValue;
+      touched = true;
+    }
+  }
+  if (!touched) return;
+  if (!config.enabled) {
+    destroyPopup();
+  } else {
+    updateCalculatorUI();
+  }
+});
+
+// Verifica si la página actual corresponde a GWC (solo por hostname, no por texto en la URL)
 function isGwcPage() {
   const host = window.location.hostname || '';
-  const href = window.location.href || '';
-  return host === 'gwc.glas.travel' ||
-         host.endsWith('.gwc.glas.travel') ||
-         href.includes('gwc.glas.travel/search') ||
-         href.includes('gwc.glas.travel');
+  return host === 'gwc.glas.travel' || host.endsWith('.gwc.glas.travel');
 }
 
 // Detección automática inteligente de cantidad de pasajeros en GWC (gwc.glas.travel)
@@ -155,7 +176,7 @@ function detectGwcPassengers(priceEl) {
     if (adults !== null || children !== null || infants !== null) {
       const sum = (adults !== null ? adults : 1) + (children || 0) + (infants || 0);
       if (sum > 0 && sum <= 30) {
-        console.log(`[EM Flights] Pasajeros detectados en GWC search form: Adultos=${adults}, Niños=${children}, Infants=${infants} => Total=${sum}`);
+        log(`Pasajeros detectados en GWC search form: Adultos=${adults}, Niños=${children}, Infants=${infants} => Total=${sum}`);
         return sum;
       }
     }
@@ -308,12 +329,7 @@ function onDocClick(e) {
     e.stopImmediatePropagation();
     const net = parsePrice(priceEl.textContent.trim());
     if (!isNaN(net) && net > 0) {
-      // Detección automática de pasajeros en GWC
-      const detectedPax = detectGwcPassengers(priceEl);
-      if (detectedPax > 0) {
-        config.passengers = detectedPax;
-      }
-      showCalculator(net, 'gwc');
+      showCalculator(net, 'gwc', priceEl);
     }
   }
 }
@@ -322,30 +338,25 @@ function onDocClick(e) {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (sender.id !== chrome.runtime.id) return;
 
-  if (msg.type === 'TOGGLE_STATE') {
-    config.enabled = msg.enabled;
-    if (!config.enabled && popup) destroyPopup();
-    if (sendResponse) sendResponse({ ok: true });
-  } else if (msg.type === 'OPEN_MANUAL_CALC') {
-    config = { ...config, ...msg.config };
-    showCalculator(currentNet || 0, 'manual');
-    if (sendResponse) sendResponse({ ok: true });
-  } else if (msg.type === 'CONFIG_UPDATED') {
-    config = { ...config, ...msg.config };
-    updateCalculatorUI();
-    if (sendResponse) sendResponse({ ok: true });
+  if (msg.type === 'OPEN_MANUAL_CALC') {
+    // Solo el documento principal abre la calculadora (evita duplicados en iframes)
+    if (window !== window.top) return;
+    ready.then(() => {
+      showCalculator(currentNet || 0, 'manual');
+      sendResponse({ ok: true });
+    });
+    return true; // respuesta asíncrona
   }
-  return true;
 });
 
 // REQUISITO CRÍTICO: Cada vez que se abre, se posiciona en el CENTRO de la pantalla
-function showCalculator(netValue, mode = 'manual') {
+function showCalculator(netValue, mode = 'manual', priceEl = null) {
   currentNet = netValue || 0;
   currentMode = mode;
 
-  // Si estamos en GWC, detectar pasajeros automáticamente si no han sido ajustados manualmente
+  // En GWC: detección automática de pasajeros (una sola vez por apertura)
   if (isGwcPage()) {
-    const detected = detectGwcPassengers();
+    const detected = detectGwcPassengers(priceEl);
     if (detected > 0) {
       config.passengers = detected;
     }
@@ -422,19 +433,15 @@ function applyModeToDOM(el, mode) {
   if (footerNote) {
     footerNote.className = `voe-footer-note ${isGwc ? 'warning' : ''}`;
     footerNote.innerHTML = isGwc
-      ? `${ICONS.warning}<span>Asegúrate de que los datos y pasajeros se hayan tomado correctamente</span>`
+      ? `${ICONS.warning}<span>Verifica que los datos y pasajeros sean correctos</span>`
       : `${ICONS.info}<span>Modo Manual · Verifica los valores antes de cotizar</span>`;
   }
   if (paxMinus && paxPlus) {
-    paxMinus.style.display = isGwc ? 'none' : 'flex';
-    paxPlus.style.display = isGwc ? 'none' : 'flex';
+    paxMinus.style.display = 'flex';
+    paxPlus.style.display = 'flex';
   }
   if (paxInput) {
-    if (isGwc) {
-      paxInput.setAttribute('readonly', 'true');
-    } else {
-      paxInput.removeAttribute('readonly');
-    }
+    paxInput.removeAttribute('readonly');
   }
 }
 
@@ -473,12 +480,10 @@ function renderCalculatorDOM(initialNet, mode) {
       <div class="voe-mini-card">
         <span class="voe-mini-label">PASAJEROS</span>
         <div class="voe-stepper" id="voePaxStepper">
-          <button class="voe-btn-step" data-field="passengers" data-step="-1" id="voePaxMinus"
-                  style="${isGwc ? 'display: none !important;' : ''}">−</button>
+          <button class="voe-btn-step" data-field="passengers" data-step="-1" id="voePaxMinus">−</button>
           <input type="number" id="voePaxInput" class="voe-step-val-input"
-                 value="${config.passengers}" min="1" step="1" ${isGwc ? 'readonly' : ''}>
-          <button class="voe-btn-step" data-field="passengers" data-step="1" id="voePaxPlus"
-                  style="${isGwc ? 'display: none !important;' : ''}">+</button>
+                 value="${config.passengers}" min="1" step="1">
+          <button class="voe-btn-step" data-field="passengers" data-step="1" id="voePaxPlus">+</button>
         </div>
       </div>
     </div>
@@ -524,7 +529,11 @@ function renderCalculatorDOM(initialNet, mode) {
     <div class="voe-itau-box ${config.itauActive ? 'active' : ''}" id="voeItauBox">
       <div class="voe-itau-box-header">
         <span class="voe-itau-box-title">${ICONS.itauLogoLg}<span>Millas Itaú Volar</span></span>
-        <span class="voe-itau-box-badge" id="voeItauDiscountTag">Sin canje</span>
+        <span class="voe-itau-box-badge" id="voeItauDiscountTag">0 millas</span>
+      </div>
+      <div class="voe-itau-cap-row" id="voeItauCapRow">
+        <span class="voe-itau-cap-label">Millas necesarias:</span>
+        <span class="voe-itau-cap-tag" id="voeItauCapTag">0 mi (Tope máx.)</span>
       </div>
       <div class="voe-itau-controls">
         <div class="voe-itau-stepper">
@@ -542,19 +551,30 @@ function renderCalculatorDOM(initialNet, mode) {
         </div>
       </div>
       <div class="voe-itau-msg" id="voeItauStatus">
-        ${ICONS.info}<span>Mínimo 5.000 millas para aplicar descuento</span>
+        ${ICONS.info}<span>Mínimo ${(config.itauMinMiles || 0).toLocaleString('es-UY')} millas para descuento</span>
       </div>
     </div>
 
     <!-- Fila 5: Tarjeta Azul (TOTAL A COBRAR - Destaque Principal) -->
     <div class="voe-banner-blue" id="voeFinalBanner">
+      <!-- Desglose de cotización: SOLO visible cuando Millas Itaú está activo -->
+      <div class="voe-itau-breakdown ${config.itauActive ? 'active' : ''}" id="voeItauBreakdown">
+        <div class="voe-itau-breakdown-row">
+          <span class="voe-itau-breakdown-label">Precio de venta</span>
+          <span class="voe-itau-breakdown-val" id="voeSalePriceVal">USD 0</span>
+        </div>
+        <div class="voe-itau-breakdown-row">
+          <span class="voe-itau-breakdown-label">Millas a descontar</span>
+          <span class="voe-itau-breakdown-val" id="voeMilesDiscountVal">0 millas (USD 0)</span>
+        </div>
+      </div>
+
       <div class="voe-banner-header">
         <span class="voe-banner-blue-title" id="voeFinalTitle">TOTAL A COBRAR</span>
-        <span class="voe-pax-badge" id="voeFinalPaxLabel" style="display: none;" title="Clic para copiar precio por pasajero">USD 0 / pax</span>
+        <span class="voe-pax-badge ${config.itauActive || (config.passengers || 1) <= 1 ? 'hidden' : ''}" id="voeFinalPaxLabel" title="Clic para copiar precio por pasajero">USD 0 / pax</span>
       </div>
       <div class="voe-banner-blue-val" id="voeFinalLabel" title="Clic para copiar precio total">USD 0</div>
-      <div class="voe-banner-subline" id="voeBannerSubline" style="display: none;"></div>
-      <div class="voe-copied-hint" id="voeCopyHint" style="display: none;">${ICONS.check}<span>¡COPIADO AL PORTAPAPELES!</span></div>
+      <div class="voe-copied-hint" id="voeCopyHint"></div>
     </div>
 
     <!-- Fila 6: Tarjeta Verde (GANANCIA NETA - Solo valor de ganancia) -->
@@ -567,7 +587,7 @@ function renderCalculatorDOM(initialNet, mode) {
 
     <!-- Footer con aviso preventivo e iconografía flat -->
     <div class="voe-footer-note ${isGwc ? 'warning' : ''}" id="voeFooterNote">
-      ${isGwc ? `${ICONS.warning}<span>Asegúrate de que los datos y pasajeros se hayan tomado correctamente</span>` : `${ICONS.info}<span>Modo Manual · Verifica los valores antes de cotizar</span>`}
+      ${isGwc ? `${ICONS.warning}<span>Verifica que los datos y pasajeros sean correctos</span>` : `${ICONS.info}<span>Modo Manual · Verifica los valores antes de cotizar</span>`}
     </div>
 
     <div class="voe-resize-handle" title="Arrastra para redimensionar"></div>
@@ -643,25 +663,31 @@ function renderCalculatorDOM(initialNet, mode) {
   // Conmutador SIN MILLAS / MILLAS ITAÚ
   div.querySelectorAll('#voeItauSwitcher .voe-switch-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const isItau = btn.dataset.itau === 'on';
-      config.itauActive = isItau;
-      if (isItau && (!config.itauMiles || config.itauMiles === 0)) {
-        config.itauMiles = config.itauMinMiles || 5000;
-        const itauInput = div.querySelector('#voeItauMilesInput');
-        if (itauInput) itauInput.value = config.itauMiles;
-      }
+      config.itauActive = btn.dataset.itau === 'on';
       persistConfig();
       updateCalculatorUI();
     });
   });
 
-  // Controles de Millas Itaú Volar
+  // Controles de Millas Itaú Volar con Tope Máximo
   const itauMilesInput = div.querySelector('#voeItauMilesInput');
   const itauMinusBtn = div.querySelector('#voeItauMinus');
   const itauPlusBtn = div.querySelector('#voeItauPlus');
 
+  function getMaxMiles() {
+    const dNow = calc(currentNet);
+    if (!dNow || !dNow.final || !dNow.mileValue) return Infinity;
+    return Math.ceil(dNow.final / dNow.mileValue);
+  }
+
   itauMilesInput.addEventListener('input', (e) => {
-    config.itauMiles = Math.max(0, parseInt(e.target.value) || 0);
+    let val = Math.max(0, parseInt(e.target.value) || 0);
+    const maxM = getMaxMiles();
+    if (maxM > 0 && val > maxM) {
+      val = maxM;
+      e.target.value = val;
+    }
+    config.itauMiles = val;
     persistConfig();
     updateCalculatorUI();
   });
@@ -674,7 +700,8 @@ function renderCalculatorDOM(initialNet, mode) {
   });
 
   itauPlusBtn.addEventListener('click', () => {
-    config.itauMiles = (config.itauMiles || 0) + 1000;
+    const maxM = getMaxMiles();
+    config.itauMiles = Math.min(maxM, (config.itauMiles || 0) + 1000);
     itauMilesInput.value = config.itauMiles;
     persistConfig();
     updateCalculatorUI();
@@ -682,7 +709,8 @@ function renderCalculatorDOM(initialNet, mode) {
 
   div.querySelectorAll('.voe-itau-chip').forEach(chip => {
     chip.addEventListener('click', () => {
-      config.itauMiles = parseInt(chip.dataset.miles) || 0;
+      const maxM = getMaxMiles();
+      config.itauMiles = Math.min(maxM, parseInt(chip.dataset.miles) || 0);
       itauMilesInput.value = config.itauMiles;
       persistConfig();
       updateCalculatorUI();
@@ -718,7 +746,9 @@ function updateCalculatorUI(targetEl = popup) {
   const finalTitle = targetEl.querySelector('#voeFinalTitle');
   const finalLabel = targetEl.querySelector('#voeFinalLabel');
   const finalPaxLabel = targetEl.querySelector('#voeFinalPaxLabel');
-  const bannerSubline = targetEl.querySelector('#voeBannerSubline');
+  const itauBreakdown = targetEl.querySelector('#voeItauBreakdown');
+  const salePriceVal = targetEl.querySelector('#voeSalePriceVal');
+  const milesDiscountVal = targetEl.querySelector('#voeMilesDiscountVal');
   const profitLabel = targetEl.querySelector('#voeProfitLabel');
 
   const itauBox = targetEl.querySelector('#voeItauBox');
@@ -738,17 +768,6 @@ function updateCalculatorUI(targetEl = popup) {
     btn.classList.toggle('active', config.itauActive ? isItau : !isItau);
   });
 
-  if (itauMilesInput && document.activeElement !== itauMilesInput) {
-    itauMilesInput.value = config.itauMiles || 0;
-  }
-
-  // Actualizar chips activos de millas
-  if (itauChips) {
-    itauChips.forEach(chip => {
-      chip.classList.toggle('active', parseInt(chip.dataset.miles) === (config.itauMiles || 0));
-    });
-  }
-
   // Actualizar chips activos de margen
   targetEl.querySelectorAll('.voe-margin-chip').forEach(chip => {
     chip.classList.toggle('active', parseFloat(chip.dataset.margin) === config.margin);
@@ -761,56 +780,92 @@ function updateCalculatorUI(targetEl = popup) {
     return;
   }
 
+  // Tope de Millas Necesarias para este pasaje
+  const maxMiles = d.maxMiles || (d.final > 0 && d.mileValue > 0 ? Math.ceil(d.final / d.mileValue) : 0);
+  const itauCapTag = targetEl.querySelector('#voeItauCapTag');
+  if (itauCapTag) {
+    itauCapTag.textContent = `${maxMiles.toLocaleString('es-UY')} mi (Tope máx.)`;
+  }
+
+  // Si las millas seleccionadas superan el tope, ajustarlas automáticamente
+  if (maxMiles > 0 && (config.itauMiles || 0) > maxMiles) {
+    config.itauMiles = maxMiles;
+    d = calc(currentNet);
+  }
+
+  if (itauMilesInput && document.activeElement !== itauMilesInput) {
+    itauMilesInput.value = config.itauMiles || 0;
+  }
+
+  // Actualizar chips activos de millas
+  if (itauChips) {
+    itauChips.forEach(chip => {
+      chip.classList.toggle('active', parseInt(chip.dataset.miles) === (config.itauMiles || 0));
+    });
+  }
+
+  // Redondeo exacto sin discrepancias visuales de 1 USD (finalRounded - discountRounded = totalToPay)
+  const paxCount = config.passengers || 1;
+  const isItau = !!config.itauActive;
+  const finalRounded = Math.round(d.final);
+  const discountRounded = isItau && d.itauDiscount > 0 ? Math.min(finalRounded, Math.round(d.itauDiscount)) : 0;
+  const totalToPay = Math.max(0, finalRounded - discountRounded);
+  const paxToPay = Math.round(totalToPay / paxCount);
+
   // Estado del Descuento Itaú Volar
   if (itauTag && itauStatus) {
     if (config.itauActive && d.itauDiscount > 0) {
-      itauTag.textContent = `- USD ${money(d.itauDiscount)}`;
+      itauTag.textContent = `- USD ${money(discountRounded)}`;
       itauTag.className = 'voe-itau-box-badge active';
-      itauStatus.innerHTML = `${ICONS.check}<span>Descuento de USD ${money(d.itauDiscount)} aplicado (-$${(d.miles * d.mileValue).toFixed(2)})</span>`;
+      if (maxMiles > 0 && d.miles >= maxMiles) {
+        itauStatus.innerHTML = `${ICONS.check}<span>Tope máximo alcanzado: cubre el 100% del billete</span>`;
+      } else {
+        itauStatus.innerHTML = `${ICONS.check}<span>Descuento de USD ${money(discountRounded)} aplicado</span>`;
+      }
       itauStatus.className = 'voe-itau-msg ok';
     } else if (config.itauActive && d.miles > 0 && d.miles < d.minMiles) {
       itauTag.textContent = `Mín. ${d.minMiles.toLocaleString('es-UY')}`;
       itauTag.className = 'voe-itau-box-badge';
-      itauStatus.innerHTML = `${ICONS.warning}<span>Requiere mínimo ${d.minMiles.toLocaleString('es-UY')} millas (ingresadas: ${d.miles.toLocaleString('es-UY')})</span>`;
+      itauStatus.innerHTML = `${ICONS.warning}<span>Requiere mínimo ${d.minMiles.toLocaleString('es-UY')} millas</span>`;
       itauStatus.className = 'voe-itau-msg warning';
     } else {
-      itauTag.textContent = 'Sin canje';
+      itauTag.textContent = '0 millas';
       itauTag.className = 'voe-itau-box-badge';
-      itauStatus.innerHTML = `${ICONS.info}<span>Mínimo ${d.minMiles.toLocaleString('es-UY')} millas · USD ${d.mileValue}/milla</span>`;
+      itauStatus.innerHTML = `${ICONS.info}<span>Mínimo ${d.minMiles.toLocaleString('es-UY')} millas para descuento</span>`;
       itauStatus.className = 'voe-itau-msg';
     }
   }
 
-  // Formato para mostrar: TOTAL A COBRAR EN DESTAQUE Y PRECIO POR PASAJERO (SOLO SI > 1 PAX)
-  const paxCount = config.passengers || 1;
-  const totalToPay = config.itauActive && d.itauDiscount > 0 ? d.finalToPay : d.final;
-  const paxToPay = config.itauActive && d.itauDiscount > 0 ? d.finalToPayPax : d.finalPax;
-
-  if (finalLabel) finalLabel.textContent = `USD ${money(totalToPay)}`;
+  // 1. No es necesario que se muestre el precio por pasajero cuando se cotiza por milla
+  // En cotización SIN MILLAS se muestra el precio por pax (cuando pax > 1)
   if (finalPaxLabel) {
-    if (paxCount > 1) {
-      finalPaxLabel.style.display = 'inline-block';
+    const showPax = !isItau && paxCount > 1;
+    finalPaxLabel.classList.toggle('hidden', !showPax);
+    if (showPax) {
       finalPaxLabel.textContent = `USD ${money(paxToPay)} / pax`;
-    } else {
-      finalPaxLabel.style.display = 'none';
     }
   }
 
-  if (config.itauActive && d.itauDiscount > 0) {
-    if (finalTitle) finalTitle.textContent = 'TOTAL A COBRAR (CON MILLAS)';
-    if (bannerSubline) {
-      bannerSubline.style.display = 'block';
-      bannerSubline.textContent = `Tarifa base: USD ${money(d.final)} · Descuento: -USD ${money(d.itauDiscount)} (${d.miles.toLocaleString('es-UY')} mi)`;
-    }
-  } else {
-    if (finalTitle) finalTitle.textContent = 'TOTAL A COBRAR';
-    if (bannerSubline) {
-      bannerSubline.style.display = 'none';
-      bannerSubline.textContent = '';
+  // 2. Desglose de Millas: se muestra ÚNICAMENTE cuando el switcher de Millas Itaú está activo
+  if (itauBreakdown) {
+    itauBreakdown.classList.toggle('active', isItau);
+    if (isItau) {
+      if (salePriceVal) salePriceVal.textContent = `USD ${money(finalRounded)}`;
+      if (milesDiscountVal) {
+        if (discountRounded > 0) {
+          milesDiscountVal.textContent = `${d.miles.toLocaleString('es-UY')} millas (USD ${money(discountRounded)})`;
+        } else {
+          milesDiscountVal.textContent = `${(d.miles || 0).toLocaleString('es-UY')} millas (USD 0)`;
+        }
+      }
     }
   }
 
-  // GANANCIA NETA: Solamente el valor de ganancia neta, sin poner el valor por pax
+  // En destaque: Total a Cobrar
+  if (finalLabel) finalLabel.textContent = `USD ${money(totalToPay)}`;
+  if (finalTitle) finalTitle.textContent = 'TOTAL A COBRAR';
+
+  // GANANCIA NETA: Solamente el valor de ganancia neta, sin poner el valor por pax (Ganancias igual que ahora)
   if (profitLabel) profitLabel.textContent = `USD ${money(d.profit)}`;
 }
 
@@ -818,7 +873,10 @@ function copyTotalPrice() {
   const d = calc(currentNet);
   if (!d) return;
 
-  const totalToPay = config.itauActive && d.itauDiscount > 0 ? d.finalToPay : d.final;
+  const isItau = !!config.itauActive;
+  const finalRounded = Math.round(d.final);
+  const discountRounded = isItau && d.itauDiscount > 0 ? Math.min(finalRounded, Math.round(d.itauDiscount)) : 0;
+  const totalToPay = Math.max(0, finalRounded - discountRounded);
   const text = `Total USD ${money(totalToPay)}`;
 
   copyTextToClipboard(text, `¡Copiado: ${text}!`);
@@ -828,7 +886,12 @@ function copyPaxPrice() {
   const d = calc(currentNet);
   if (!d) return;
 
-  const paxToPay = config.itauActive && d.itauDiscount > 0 ? d.finalToPayPax : d.finalPax;
+  const paxCount = config.passengers || 1;
+  const isItau = !!config.itauActive;
+  const finalRounded = Math.round(d.final);
+  const discountRounded = isItau && d.itauDiscount > 0 ? Math.min(finalRounded, Math.round(d.itauDiscount)) : 0;
+  const totalToPay = Math.max(0, finalRounded - discountRounded);
+  const paxToPay = Math.round(totalToPay / paxCount);
   const text = `USD ${money(paxToPay)} por pasajero`;
 
   copyTextToClipboard(text, `¡Copiado: ${text}!`);
@@ -859,14 +922,17 @@ function fallbackCopy(text, feedbackMsg) {
 }
 
 let copyHintTimer = null;
-function showCopiedFeedback(msg = '¡COPIADO AL PORTAPAPELES!') {
+function showCopiedFeedback(msg) {
   const hint = popup?.querySelector('#voeCopyHint');
-  if (hint) {
+  if (hint && msg) {
     hint.innerHTML = `${ICONS.check}<span>${msg}</span>`;
-    hint.style.display = 'inline-flex';
+    hint.classList.add('show');
     clearTimeout(copyHintTimer);
     copyHintTimer = setTimeout(() => {
-      if (hint) hint.style.display = 'none';
+      if (hint) {
+        hint.classList.remove('show');
+        hint.innerHTML = '';
+      }
     }, 1800);
   }
 }
@@ -884,15 +950,15 @@ function parsePrice(text) {
     }
   } else if (clean.includes(',')) {
     const parts = clean.split(',');
-    if (parts.length === 2 && parts[1].length === 3 && parseInt(parts[0]) > 0) {
-      clean = clean.replace(/,/g, '');
+    if (parts.length > 2 || (parts[1].length === 3 && parseInt(parts[0]) > 0)) {
+      clean = clean.replace(/,/g, ''); // separador de miles (ej. 1,234,567)
     } else {
       clean = clean.replace(',', '.');
     }
   } else if (clean.includes('.')) {
     const parts = clean.split('.');
-    if (parts.length === 2 && parts[1].length === 3 && parseInt(parts[0]) > 0) {
-      clean = clean.replace(/\./g, '');
+    if (parts.length > 2 || (parts[1].length === 3 && parseInt(parts[0]) > 0)) {
+      clean = clean.replace(/\./g, ''); // separador de miles (ej. 1.234.567)
     }
   }
   return parseFloat(clean);
@@ -910,6 +976,7 @@ function calc(net) {
       pax: config.passengers,
       miles: config.itauMiles || 0,
       minMiles: config.itauMinMiles !== undefined ? config.itauMinMiles : 5000,
+      maxMiles: 0,
       mileValue: config.itauMileValue !== undefined ? config.itauMileValue : 0.0125,
       itauActive: !!config.itauActive,
       itauDiscount: 0,
@@ -923,14 +990,19 @@ function calc(net) {
   const final = net / (1 - pct / 100);
   const profit = final - net;
 
-  // Descuento de Millas Itaú Volar (solo si está activo el conmutador)
+  // Descuento de Millas Itaú Volar (solo si está activo el conmutador y con tope máx.)
   let itauDiscount = 0;
-  const miles = config.itauMiles || 0;
   const minMiles = config.itauMinMiles !== undefined ? config.itauMinMiles : 5000;
   const mileValue = config.itauMileValue !== undefined ? config.itauMileValue : 0.0125;
+  const maxMiles = final > 0 && mileValue > 0 ? Math.ceil(final / mileValue) : 0;
+  let miles = config.itauMiles || 0;
+
+  if (maxMiles > 0 && miles > maxMiles) {
+    miles = maxMiles;
+  }
 
   if (config.itauActive && miles >= minMiles) {
-    itauDiscount = miles * mileValue;
+    itauDiscount = Math.min(final, miles * mileValue);
   }
 
   const finalToPay = Math.max(0, final - itauDiscount);
@@ -945,6 +1017,7 @@ function calc(net) {
     pax: config.passengers,
     miles,
     minMiles,
+    maxMiles,
     mileValue,
     itauActive: !!config.itauActive,
     itauDiscount,
@@ -964,7 +1037,6 @@ function persistConfig() {
       passengers: config.passengers,
       margin: config.margin,
       bok: config.bok,
-      displayMode: config.displayMode,
       itauActive: config.itauActive,
       itauMiles: config.itauMiles
     });

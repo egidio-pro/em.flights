@@ -409,16 +409,21 @@
   flex-shrink: 0 !important;
 }
 
-/* Tarjeta de Millas Itaú Volar (Oculta por defecto cuando está Sin Millas) */
+@keyframes voeFadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Tarjeta de Millas Itaú Volar (Ultra compacta, mínimo espacio vertical) */
 .voe-itau-box {
-  background: #FFF7ED !important;
-  border: 1.5px solid #FED7AA !important;
-  border-radius: 13px !important;
-  padding: 8px 10px !important;
-  margin-bottom: 7px !important;
+  background: var(--voe-itau-surface) !important;
+  border: 1px solid var(--voe-itau-border) !important;
+  border-radius: 10px !important;
+  padding: 4px 8px !important;
+  margin-bottom: 4px !important;
   display: none !important;
   flex-direction: column !important;
-  gap: 6px !important;
+  gap: 2.5px !important;
   box-sizing: border-box !important;
   animation: voeFadeIn 0.15s ease !important;
 }
@@ -426,32 +431,28 @@
   display: flex !important;
 }
 
-@keyframes voeFadeIn {
-  from { opacity: 0; transform: translateY(-3px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
 .voe-itau-box-header {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
+  line-height: 1 !important;
 }
 
 .voe-itau-box-title {
-  font-size: 11px !important;
+  font-size: 10px !important;
   font-weight: 800 !important;
   color: #9A3412 !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 5px !important;
+  gap: 4px !important;
   letter-spacing: -0.2px !important;
 }
 
 .voe-itau-box-badge {
-  font-size: 9.5px !important;
+  font-size: 8.5px !important;
   font-weight: 800 !important;
-  padding: 1.5px 6px !important;
-  border-radius: 7px !important;
+  padding: 1px 5px !important;
+  border-radius: 6px !important;
   background: #FFEDD5 !important;
   color: #C2410C !important;
   border: 1px solid rgba(194, 65, 12, 0.2) !important;
@@ -461,6 +462,30 @@
   background: #ECFDF5 !important;
   color: #059669 !important;
   border-color: rgba(5, 150, 105, 0.25) !important;
+}
+
+/* Fila de Tope de Millas Necesarias para este pasaje */
+.voe-itau-cap-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background: rgba(234, 88, 12, 0.08) !important;
+  border: 1px dashed rgba(234, 88, 12, 0.3) !important;
+  border-radius: 6px !important;
+  padding: 2.5px 6px !important;
+  line-height: 1.15 !important;
+}
+
+.voe-itau-cap-label {
+  font-size: 8.5px !important;
+  font-weight: 700 !important;
+  color: #9A3412 !important;
+}
+
+.voe-itau-cap-tag {
+  font-size: 8.5px !important;
+  font-weight: 800 !important;
+  color: #C2410C !important;
 }
 
 .voe-itau-controls {
@@ -473,20 +498,21 @@
 .voe-itau-stepper {
   display: flex !important;
   align-items: center !important;
-  gap: 3px !important;
+  gap: 2px !important;
   background: #FFF7ED !important;
-  border-radius: 16px !important;
-  padding: 2px 3px !important;
+  border: 1px solid #FED7AA !important;
+  border-radius: 14px !important;
+  padding: 1px 2px !important;
 }
 
 .voe-btn-itau-step {
-  width: 20px !important;
-  height: 20px !important;
+  width: 17px !important;
+  height: 17px !important;
   border-radius: 50% !important;
   border: none !important;
   background: #FFFFFF !important;
   color: #EA580C !important;
-  font-size: 13px !important;
+  font-size: 11px !important;
   font-weight: 800 !important;
   cursor: pointer !important;
   display: flex !important;
@@ -501,14 +527,15 @@
 }
 
 .voe-itau-miles-input {
-  width: 52px !important;
-  font-size: 12px !important;
+  width: 44px !important;
+  font-size: 11px !important;
   font-weight: 800 !important;
   color: #9A3412 !important;
   text-align: center !important;
   border: none !important;
   background: transparent !important;
   outline: none !important;
+  padding: 0 !important;
 }
 .voe-itau-miles-input::-webkit-inner-spin-button,
 .voe-itau-miles-input::-webkit-outer-spin-button {
@@ -523,15 +550,16 @@
 }
 
 .voe-itau-chip {
-  padding: 3px 5px !important;
-  border-radius: 6px !important;
+  padding: 2px 4.5px !important;
+  border-radius: 5px !important;
   border: 1px solid var(--voe-card-border) !important;
-  background: #F8FAFC !important;
+  background: #FFFFFF !important;
   color: #475569 !important;
-  font-size: 9px !important;
+  font-size: 8.5px !important;
   font-weight: 800 !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
+  line-height: 1.1 !important;
 }
 .voe-itau-chip:hover {
   background: #FFF7ED !important;
@@ -545,15 +573,16 @@
 }
 
 .voe-itau-msg {
-  font-size: 9.5px !important;
+  font-size: 8px !important;
   font-weight: 700 !important;
   color: var(--voe-text-muted) !important;
   text-align: center !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 4px !important;
-  line-height: 1.3 !important;
+  gap: 3px !important;
+  line-height: 1.15 !important;
+  margin-top: 1px !important;
 }
 .voe-itau-msg.warning {
   color: #B45309 !important;
@@ -593,18 +622,15 @@
   transform: scale(0.96) !important;
   background: rgba(255, 255, 255, 0.45) !important;
 }
-.voe-pax-badge.green {
-  background: rgba(20, 83, 45, 0.1) !important;
-  color: var(--voe-green-dark) !important;
-  cursor: default !important;
-  transform: none !important;
+.voe-pax-badge.hidden {
+  display: none !important;
 }
 
 /* Tarjeta Azul: TOTAL A COBRAR (Destaque Principal Fintech) */
 .voe-banner-blue {
   background: linear-gradient(135deg, #1E40AF 0%, #1D4ED8 100%) !important;
   border-radius: 14px !important;
-  padding: 10px 14px !important;
+  padding: 9px 13px !important;
   color: #FFFFFF !important;
   margin-bottom: 6px !important;
   display: flex !important;
@@ -612,6 +638,40 @@
   gap: 1px !important;
   box-shadow: 0 6px 18px -2px rgba(29, 78, 216, 0.28) !important;
   cursor: default !important;
+}
+
+/* Desglose de Millas dentro de la Tarjeta Azul (Visible ÚNICAMENTE cuando Millas Itaú está activo) */
+.voe-itau-breakdown {
+  display: none !important;
+  flex-direction: column !important;
+  gap: 2.5px !important;
+  margin-bottom: 5px !important;
+  padding-bottom: 5px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22) !important;
+  animation: voeFadeIn 0.15s ease !important;
+}
+.voe-itau-breakdown.active {
+  display: flex !important;
+}
+
+.voe-itau-breakdown-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 9.5px !important;
+  line-height: 1.25 !important;
+}
+
+.voe-itau-breakdown-label {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1px !important;
+}
+
+.voe-itau-breakdown-val {
+  color: #FFFFFF !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.2px !important;
 }
 
 .voe-banner-blue-title {
@@ -642,13 +702,6 @@
 .voe-banner-blue-val:active {
   transform: scale(0.97) !important;
   background: rgba(255, 255, 255, 0.22) !important;
-}
-.voe-banner-subline {
-  font-size: 9.5px !important;
-  font-weight: 700 !important;
-  opacity: 0.92 !important;
-  margin-top: 2px !important;
-  letter-spacing: 0.2px !important;
 }
 
 /* Tarjeta Verde: GANANCIA NETA (Secundaria, limpia y refinada) */
@@ -688,8 +741,8 @@
   background: #F8FAFC !important;
   border: 1px solid #E2E8F0 !important;
   border-radius: 8px !important;
-  padding: 4px 8px !important;
-  line-height: 1.35 !important;
+  padding: 3px 8px !important;
+  line-height: 1.25 !important;
   letter-spacing: 0.1px !important;
   margin-top: 3px !important;
   box-sizing: border-box !important;
@@ -697,6 +750,7 @@
   align-items: center !important;
   justify-content: center !important;
   gap: 5px !important;
+  white-space: nowrap !important;
 }
 .voe-footer-note.warning {
   background: #FFFBEB !important;
@@ -716,18 +770,23 @@
   border-bottom-right-radius: 24px !important;
 }
 
-/* Toast de Copiado en la tarjeta azul */
+/* Toast de Copiado en la tarjeta azul (Oculto por defecto, visible solo tras clic explícito) */
 .voe-copied-hint {
-  font-size: 10px !important;
+  display: none !important;
+  font-size: 9.5px !important;
   font-weight: 800 !important;
   background: rgba(255, 255, 255, 0.25) !important;
   padding: 2.5px 8px !important;
   border-radius: 8px !important;
   align-self: flex-start !important;
-  margin-top: 2px !important;
-  display: inline-flex !important;
+  margin-top: 3px !important;
   align-items: center !important;
   gap: 4px !important;
+  color: #FFFFFF !important;
+}
+.voe-copied-hint.show {
+  display: inline-flex !important;
+  animation: voeFadeIn 0.15s ease !important;
 }
 
 /* Helper de Icono SVG Plano */

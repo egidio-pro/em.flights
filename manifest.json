@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "EM Flights",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "Calculadora de margen real para GWC",
   "permissions": ["storage", "activeTab", "scripting"],
   "content_security_policy": {
@@ -22,12 +22,11 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["*://gwc.glas.travel/*", "*://*.gwc.glas.travel/*"],
       "js":  ["content.js"],
       "css": ["styles.css"],
       "run_at": "document_idle",
-      "all_frames": true,
-      "match_about_blank": true
+      "all_frames": false
     }
   ],
   "web_accessible_resources": [
