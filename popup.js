@@ -17,6 +17,11 @@ let calcConfig = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const versionEl = document.getElementById('popupVersion');
+  if (versionEl) {
+    versionEl.textContent = `V${chrome.runtime.getManifest().version} · CALCULADORA`;
+  }
+
   const cfg = await chrome.storage.sync.get({
     enabled: true,
     itauMileValue: 0.0125,
