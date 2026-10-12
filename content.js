@@ -1,5 +1,5 @@
 /* ================================================================
-   EM FLIGHTS – content.js  v2.2.0
+   EM FLIGHTS – content.js  v2.0.0
    Calculadora EM (Centrada en Pantalla) + Descuento Millas Itaú Volar
    ================================================================ */
 

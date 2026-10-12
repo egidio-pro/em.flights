@@ -1,8 +1,8 @@
-# ✈️ EM Flights (v2.2.0)
+# ✈️ EM Flights (v2.0.0)
 
 > **Calculadora de Margen Real, Pasajeros y Canje de Millas Itaú Volar para Emisión de Vuelos**
 
-[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](https://github.com/egidio-pro/em.flights)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/egidio-pro/em.flights)
 [![Manifest](https://img.shields.io/badge/manifest-v3-green.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Platform](https://img.shields.io/badge/platform-Google%20Chrome-4285F4.svg)](https://www.google.com/chrome/)

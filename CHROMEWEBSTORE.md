@@ -1,6 +1,6 @@
 # Ficha de Chrome Web Store — EM Flights
 
-> Última actualización: 2026-10-12 | Versión: 2.2.0
+> Última actualización: 2026-10-12 | Versión: 2.0.0
 
 ---
 
@@ -59,7 +59,7 @@ EM Flights no recopila datos personales, no realiza seguimiento de navegación n
 
 HISTORIAL DE VERSIONES:
 
-Versión 2.2.0:
+Versión 2.0.0:
 - Integración completa de Canje de Millas Itaú Volar con conmutador en tiempo real.
 - Indicador de "Millas necesarias" con tope inteligente máximo para evitar desbordes de canje.
 - Desglose dinámico en la tarjeta azul: Precio de venta, Millas a descontar y Total a cobrar.
@@ -112,10 +112,10 @@ Para la pestaña de privacidad en la consola de Google Chrome Developer:
 
 ## 4. Archivo ZIP para Subir a la Tienda
 
-* **Nombre del archivo:** `em-flights-v2.2.0.zip`
+* **Nombre del archivo:** `em-flights-v2.0.0.zip`
 * **Ubicación:** Raíz del proyecto
 * **Archivos incluidos:**
-  * `manifest.json` (v2.2.0, Manifest V3)
+  * `manifest.json` (v2.0.0, Manifest V3)
   * `content.js`
   * `styles.css`
   * `popup.html`
